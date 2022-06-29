@@ -14,8 +14,6 @@ const server_1 = require("./core/server");
 const container_1 = require("./core/container");
 const types_1 = require("./core/types");
 const logger_interface_1 = require("./interfaces/services/logger.interface");
-// controllers
-require("./controllers/home.controller");
 const port = 3000;
 const serverInstace = server_1.server.build();
 serverInstace.listen(port, () => __awaiter(void 0, void 0, void 0, function* () {

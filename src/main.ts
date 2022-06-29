@@ -4,9 +4,6 @@ import { container } from "./core/container";
 import { TYPES } from "./core/types";
 import { ILogger, LoggerLevels } from "./interfaces/services/logger.interface";
 
-// controllers
-import './controllers/home.controller';
-
 const port = 3000;
 
 const serverInstace = server.build();
