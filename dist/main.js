@@ -14,9 +14,9 @@ const types_1 = require("./core/types");
 const logger_interface_1 = require("./interfaces/services/logger.interface");
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const logger = container_1.container.get(types_1.TYPES.Logger);
-    const database = container_1.container.get(types_1.TYPES.Database);
-    const connection = yield database.getConnection();
     logger.log(logger_interface_1.LoggerLevels.DEBUG, "Hello from main.ts!");
+    const database = container_1.container.get(types_1.TYPES.Database);
+    yield database.getConnection();
     logger.log(logger_interface_1.LoggerLevels.DEBUG, "End program");
 });
 main();

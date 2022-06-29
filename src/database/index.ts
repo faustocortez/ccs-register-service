@@ -14,7 +14,8 @@ const MysqlDataSource = new DataSource({
     username: "root",
     password: "root",
     database: "calls",
-    entities: [Register]
+    entities: [Register],
+    synchronize: true
 });
 
 

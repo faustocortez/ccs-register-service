@@ -18,19 +18,19 @@ __decorate([
     __metadata("design:type", String)
 ], Register.prototype, "idRegistro", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'date', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
-    __metadata("design:type", Date)
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: false, default: () => 'NOW()' }),
+    __metadata("design:type", String)
 ], Register.prototype, "fecha", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'time', nullable: false, default: '00:00:00' }),
     __metadata("design:type", String)
 ], Register.prototype, "inicia", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'date', nullable: false, default: '0000-00-00' }),
-    __metadata("design:type", Date)
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: false, default: '1000-01-01 00:00:00' }),
+    __metadata("design:type", String)
 ], Register.prototype, "fechaFinal", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '0000-00-00' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '00:00:00' }),
     __metadata("design:type", String)
 ], Register.prototype, "termina", void 0);
 __decorate([

@@ -9,16 +9,16 @@ export class Register {
     @PrimaryGeneratedColumn('increment', { type: 'bigint' })
     idRegistro: string;
 
-    @Column({ type: 'date', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
-    fecha: Date;
+    @Column( { type: 'datetime', nullable: false, default: () => 'NOW()' })
+    fecha: string;
 
     @Column({ type: 'time', nullable: false, default: '00:00:00' })
     inicia: string;
 
-    @Column({ type: 'date', nullable: false, default: '0000-00-00' })
-    fechaFinal: Date;
+    @Column({ type: 'datetime', nullable: false, default: '1000-01-01 00:00:00' })
+    fechaFinal: string;
 
-    @Column({ type: 'varchar', length: 100, nullable: false, default: '0000-00-00' })
+    @Column({ type: 'varchar', length: 100, nullable: false, default: '00:00:00' })
     termina: string;
 
     @Column({ type: 'varchar', length: 12, nullable: false, default: '0000-00-00' })
