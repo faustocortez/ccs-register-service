@@ -48,16 +48,17 @@ let Database = Database_1 = class Database {
     }
     getConnection() {
         return __awaiter(this, void 0, void 0, function* () {
+            this.logger.log(logger_interface_1.LoggerLevels.DEBUG, `Getting DataSource connection...`);
             if (Database_1.connection instanceof typeorm_1.DataSource)
                 return Database_1.connection;
             try {
                 Database_1.connection = yield MysqlDataSource.initialize();
-                this.logger.log(logger_interface_1.LoggerLevels.DEBUG, `Connection established`);
             }
             catch (error) {
                 this.logger.log(logger_interface_1.LoggerLevels.DEBUG, 'Cannot establish database connection');
                 this.logger.log(logger_interface_1.LoggerLevels.ERROR, error);
             }
+            this.logger.log(logger_interface_1.LoggerLevels.DEBUG, `Connection established`);
             return Database_1.connection;
         });
     }

@@ -1,15 +1,19 @@
+import "reflect-metadata";
+import { server } from "./core/server";
 import { container } from "./core/container";
 import { TYPES } from "./core/types";
 import { ILogger, LoggerLevels } from "./interfaces/services/logger.interface";
 
-const main = async () => {
+// controllers
+import './controllers/home.controller';
+
+const port = 3000;
+
+const serverInstace = server.build();
+serverInstace.listen(port, async () => {
   const logger = container.get<ILogger>(TYPES.Logger);
-  logger.log(LoggerLevels.DEBUG, "Hello from main.ts!");
+  logger.log(LoggerLevels.DEBUG, `Server listening in port: ${ port }`);
   
   const database = container.get<any>(TYPES.Database);
   await database.getConnection();
-
-  logger.log(LoggerLevels.DEBUG, "End program");
-};
-
-main();
+});

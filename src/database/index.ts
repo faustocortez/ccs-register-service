@@ -26,16 +26,18 @@ class Database {
     public constructor(@inject(TYPES.Logger) private readonly logger: Logger) {}
 
     public async getConnection(): Promise<DataSource> {
-        if (Database.connection instanceof DataSource) return Database.connection;
+        this.logger.log(LoggerLevels.DEBUG, `Getting DataSource connection...`);
 
+        if (Database.connection instanceof DataSource) return Database.connection;
+        
         try {
             Database.connection = await MysqlDataSource.initialize();
-            this.logger.log(LoggerLevels.DEBUG, `Connection established`);
         } catch (error) {
             this.logger.log(LoggerLevels.DEBUG, 'Cannot establish database connection');
             this.logger.log(LoggerLevels.ERROR, error);
         }
-
+        
+        this.logger.log(LoggerLevels.DEBUG, `Connection established`);
         return Database.connection;
     }
 
