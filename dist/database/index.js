@@ -27,21 +27,11 @@ var Database_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 const inversify_1 = require("inversify");
 const typeorm_1 = require("typeorm");
-const register_entity_1 = require("../entities/register.entity");
+const data_source_config_1 = require("../core/data-source-config");
 const types_1 = require("../core/types");
 const logger_service_1 = __importDefault(require("../services/logger.service"));
 const logger_interface_1 = require("../interfaces/services/logger.interface");
-// TODO: Make it ormconfig.json or env
-const MysqlDataSource = new typeorm_1.DataSource({
-    type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "root",
-    password: "root",
-    database: "calls",
-    entities: [register_entity_1.Register],
-    synchronize: true
-});
+const MySql = new typeorm_1.DataSource(data_source_config_1.ormConfig);
 let Database = Database_1 = class Database {
     constructor(logger) {
         this.logger = logger;
@@ -52,7 +42,7 @@ let Database = Database_1 = class Database {
             if (Database_1.connection instanceof typeorm_1.DataSource)
                 return Database_1.connection;
             try {
-                Database_1.connection = yield MysqlDataSource.initialize();
+                Database_1.connection = yield MySql.initialize();
             }
             catch (error) {
                 this.logger.log(logger_interface_1.LoggerLevels.DEBUG, 'Cannot establish database connection');
@@ -60,6 +50,12 @@ let Database = Database_1 = class Database {
             }
             this.logger.log(logger_interface_1.LoggerLevels.DEBUG, `Connection established`);
             return Database_1.connection;
+        });
+    }
+    getRepository(repository) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const connection = yield this.getConnection();
+            return connection.getRepository(repository);
         });
     }
 };
