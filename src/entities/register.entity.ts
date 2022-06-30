@@ -9,13 +9,13 @@ export class Register {
     @PrimaryGeneratedColumn('increment', { type: 'bigint' })
     idRegistro: string;
 
-    @Column( { type: 'datetime', nullable: false }) // default: () => 'NOW()'
+    @Column( { type: 'date', nullable: false }) // default: () => 'NOW()'
     fecha: string;
 
     @Column({ type: 'time', nullable: false }) // default: '00:00:00'
     inicia: string;
 
-    @Column({ type: 'datetime', nullable: false }) // default: '1000-01-01 00:00:00'
+    @Column({ type: 'date', nullable: false }) // default: '1000-01-01 00:00:00'
     fechaFinal: string;
 
     @Column({ type: 'varchar', length: 100, nullable: false }) // default: '00:00:00'
@@ -63,6 +63,6 @@ export class Register {
     @Column({ type: 'varchar', length: 100, nullable: false }) // default: ''
     idCliente: string;
 
-    @Column({ type: 'varchar', length: 100, nullable: false }) // default: '0000-00-00'
+    @Column({ type: 'date', length: 100, nullable: false }) // default: '0000-00-00'
     fechaIng: Date;
 }
