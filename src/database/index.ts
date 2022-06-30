@@ -5,8 +5,7 @@ import { ormConfig } from '../core/data-source-config';
 import { TYPES } from '../core/types';
 import Logger from '../services/logger.service';
 import { LoggerLevels } from '../interfaces/services/logger.interface';
-
-const MySql = new DataSource(ormConfig as DataSourceOptions);
+import { Register } from '../entities/register.entity';
 
 @injectable()
 class Database {
@@ -20,7 +19,11 @@ class Database {
         if (Database.connection instanceof DataSource) return Database.connection;
         
         try {
-            Database.connection = await MySql.initialize();
+            const config = {
+                ...ormConfig,
+                entities: [Register]
+            } as DataSourceOptions;
+            Database.connection = await new DataSource(config).initialize();
         } catch (error) {
             this.logger.log(LoggerLevels.DEBUG, 'Cannot establish database connection');
             this.logger.log(LoggerLevels.ERROR, error);

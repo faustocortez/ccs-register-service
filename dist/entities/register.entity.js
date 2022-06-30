@@ -18,79 +18,98 @@ __decorate([
     __metadata("design:type", String)
 ], Register.prototype, "idRegistro", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'datetime', nullable: false, default: () => 'NOW()' }),
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: false }) // default: () => 'NOW()'
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "fecha", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'time', nullable: false, default: '00:00:00' }),
+    (0, typeorm_1.Column)({ type: 'time', nullable: false }) // default: '00:00:00'
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "inicia", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'datetime', nullable: false, default: '1000-01-01 00:00:00' }),
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: false }) // default: '1000-01-01 00:00:00'
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "fechaFinal", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '00:00:00' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: '00:00:00'
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "termina", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 12, nullable: false, default: '0000-00-00' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 12, nullable: false }) // default: '0000-00-00'
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "dura", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: ''
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "ip", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'int', width: 11, nullable: false, default: '0' }),
+    (0, typeorm_1.Column)({ type: 'int', width: 11, nullable: false }) // default: '0'
+    ,
     __metadata("design:type", Number)
 ], Register.prototype, "estacion", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'int', width: 11, nullable: false, default: '0' }),
+    (0, typeorm_1.Column)({ type: 'int', width: 11, nullable: false }) // default: '0'
+    ,
     __metadata("design:type", Number)
 ], Register.prototype, "idEvento", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '0' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: '0'
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "evento", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: ''
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "estadoEvento", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: ''
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "Telefono", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: ''
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "ea", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: ''
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "agente", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: ''
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "Password", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: ''
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "grabacion", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: ''
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "servicio", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: ''
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "identificador", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: ''
+    ,
     __metadata("design:type", String)
 ], Register.prototype, "idCliente", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false, default: '0000-00-00' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: false }) // default: '0000-00-00'
+    ,
     __metadata("design:type", Date)
 ], Register.prototype, "fechaIng", void 0);
 Register = __decorate([

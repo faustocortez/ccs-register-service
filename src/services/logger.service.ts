@@ -4,7 +4,11 @@ import { ILogger, LoggerLevels } from '../interfaces/services/logger.interface';
 
 @injectable()
 class Logger implements ILogger{
-    public log(level: LoggerLevels, message: string, data?: Array<unknown> | Record<string, unknown> ): void {
+    public log(
+      level: LoggerLevels,
+      message: string,
+      data?: Array<unknown> | Record<string, unknown>
+    ): void {
       const time = new Date().toISOString();
       const log = `${time} - [${level}]: ${message}`;
       console.log(log);

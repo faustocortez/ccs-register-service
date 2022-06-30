@@ -5,7 +5,6 @@ export const ormConfig = {
     "username": "root",
     "password": "root",
     "database": "calls",
-    "entities": ["src/entities/**/*.ts"],
     "synchronize": true
 };
  

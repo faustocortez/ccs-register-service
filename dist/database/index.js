@@ -31,7 +31,7 @@ const data_source_config_1 = require("../core/data-source-config");
 const types_1 = require("../core/types");
 const logger_service_1 = __importDefault(require("../services/logger.service"));
 const logger_interface_1 = require("../interfaces/services/logger.interface");
-const MySql = new typeorm_1.DataSource(data_source_config_1.ormConfig);
+const register_entity_1 = require("../entities/register.entity");
 let Database = Database_1 = class Database {
     constructor(logger) {
         this.logger = logger;
@@ -42,7 +42,8 @@ let Database = Database_1 = class Database {
             if (Database_1.connection instanceof typeorm_1.DataSource)
                 return Database_1.connection;
             try {
-                Database_1.connection = yield MySql.initialize();
+                const config = Object.assign(Object.assign({}, data_source_config_1.ormConfig), { entities: [register_entity_1.Register] });
+                Database_1.connection = yield new typeorm_1.DataSource(config).initialize();
             }
             catch (error) {
                 this.logger.log(logger_interface_1.LoggerLevels.DEBUG, 'Cannot establish database connection');
