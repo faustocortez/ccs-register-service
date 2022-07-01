@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { controller, httpGet } from "inversify-express-utils";
 import { connect } from "../database";
-// import Database from "../database/index";
 
 @controller("/")
 export class HomeController {
@@ -12,10 +11,11 @@ export class HomeController {
 
   @httpGet("register")
   public async getRegisters(req: Request, res: Response) {
-    // const db = new Database();
-    // const conn = await db.getConnection();
     const conn = await connect();
-    const registers = await conn.query('SELECT * FROM calls.register limit 10;')
+    const [registers] = await conn.query(
+      'select * from calls.register where agente=? limit 2;',
+      [7874]
+    )
     return res.json({ registers });
   }
 }

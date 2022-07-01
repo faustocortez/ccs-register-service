@@ -1,11 +1,11 @@
 import 'reflect-metadata';
 import { injectable } from 'inversify';
-import { ILogger, LoggerLevels } from '../interfaces/services/logger.interface';
+import { ILogger, LogLevel } from '../interfaces/services/logger.interface';
 
 @injectable()
 class Logger implements ILogger{
     public log(
-      level: LoggerLevels,
+      level: LogLevel,
       message: string,
       data?: Array<unknown> | Record<string, unknown>
     ): void {

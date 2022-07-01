@@ -1,8 +1,8 @@
 export interface ILogger {
-    log(level: LoggerLevels, message: string, data?: Array<unknown> | Record<string, unknown> ): void;
+    log(level: LogLevel, message: string, data?: Array<unknown> | Record<string, unknown> ): void;
 }
 
-export enum LoggerLevels {
+export enum LogLevel {
     DEBUG = 'DEBUG',
     INFO = 'INFO',
     ERROR = 'ERROR'
