@@ -1,27 +1,30 @@
 import { inject } from "inversify";
-import { Request, Response } from "express";
 import { BaseHttpController, controller, httpGet, queryParam } from "inversify-express-utils";
 import { TYPES } from "../core/types";
+import { LogLevel } from "../interfaces/services/logger.interface";
+import Logger from "../services/logger.service";
 import RegisterService from "../services/register.service";
 
 @controller("/register")
 export class RegisterController extends BaseHttpController {
 
-    public constructor(@inject(TYPES.RegisterService) private registerService: RegisterService) {
+    public constructor(
+        @inject(TYPES.RegisterService) private registerService: RegisterService,
+        @inject(TYPES.Logger) private logger: Logger
+    ) {
         super();
     }
   
     @httpGet("")
-    public async index(req: Request) {
-        const params = { ...req.query };
-        const registers = await this.registerService.getRegisters(params);
+    public async index() {
+        this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => index`);
+        const registers = await this.registerService.getRegisters();
         return this.json({ registers });
     }
 
     @httpGet("/filter")
-    public async byFilters(@queryParam('q') q: string) {
-        const filter = q;
-        console.log('c')
+    public async byFilters(@queryParam('filter') filter: string) {
+        this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => index`);
         const registers = await this.registerService.getRegistersByFilter(filter);
         return this.json({ registers });
     }

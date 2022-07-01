@@ -15,9 +15,10 @@ class RegisterService implements IRegisterService {
         @inject(TYPES.Logger) private logger: ILogger
     ) {}
 
-    // public async getRegisters(params?: { [key: string]: unknown; }): Promise<RowDataPacket[]> {
-    public async getRegisters(params: { [key: string]: unknown; }): Promise<RowDataPacket[]> {
-        throw new Error('Method not implemented.');   
+    public async getRegisters(): Promise<RowDataPacket[]> {
+        const result = await this.database.query('SELECT * FROM calls.register');
+        const registers = result[0] as RowDataPacket[];
+        return registers;
     }
 
     public async getRegistersByFilter(queryStringParameters?: string): Promise<RowDataPacket[]> {

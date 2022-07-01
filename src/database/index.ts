@@ -16,7 +16,10 @@ class Database {
     public async getConnection(): Promise<Pool> {
         this.logger.log(LogLevel.DEBUG, `Getting DataSource connection...`);
 
-        if (Database.connection instanceof Database) return Database.connection;
+        if (Database.connection instanceof Database) {
+            this.logger.log(LogLevel.DEBUG, `DB already connected`);
+            return Database.connection
+        }
         
         try {
             Database.connection = createPool({
@@ -26,17 +29,17 @@ class Database {
                 database: process.env.DB_NAME,
                 connectionLimit: Number(process.env.DB_CONNECTION_LIMIT)
             });
+            this.logger.log(LogLevel.DEBUG, `Connection established`);
         } catch (error) {
             this.logger.log(LogLevel.DEBUG, 'Cannot establish database connection');
             this.logger.log(LogLevel.ERROR, error);
         }
         
-        this.logger.log(LogLevel.DEBUG, `Connection established`);
         return Database.connection;
     }
 
     public async query(query: string, preparedStatements?: (string | number | unknown)[]) {
-        const connection = await this.getConnection();
+        const { connection } = Database;
         return (preparedStatements) ? connection.query(query, preparedStatements) : connection.query(query);
     }
 }
