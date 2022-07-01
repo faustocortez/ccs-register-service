@@ -10,7 +10,4 @@ const serverInstace = server.build();
 serverInstace.listen(port, async () => {
   const logger = container.get<ILogger>(TYPES.Logger);
   logger.log(LoggerLevels.DEBUG, `Server listening in port: ${ port }`);
-  
-  const database = container.get<any>(TYPES.Database);
-  await database.getConnection();
 });

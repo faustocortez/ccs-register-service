@@ -1,42 +1,50 @@
 
 import { inject, injectable } from 'inversify';
-import { DataSource, DataSourceOptions } from 'typeorm';
-import { ormConfig } from '../core/data-source-config';
+import dotenv from 'dotenv';
+import { createPool, Pool } from 'mysql2/promise';
 import { TYPES } from '../core/types';
 import Logger from '../services/logger.service';
 import { LoggerLevels } from '../interfaces/services/logger.interface';
-import { Register } from '../entities/register.entity';
 
-@injectable()
-class Database {
-    private static connection: DataSource;
+dotenv.config();
+export async function connect() {
+    console.log(LoggerLevels.DEBUG, `Getting DataSource connection...`);
+    const connection = await createPool({
+        host: 'localhost',
+        user: 'root',
+        password: 'mysqlserver!!',
+        database: 'calls',
+        connectionLimit: 10
+    });
+    console.log(LoggerLevels.DEBUG, `connected`);
 
-    public constructor(@inject(TYPES.Logger) private readonly logger: Logger) {}
-
-    public async getConnection(): Promise<DataSource> {
-        this.logger.log(LoggerLevels.DEBUG, `Getting DataSource connection...`);
-
-        if (Database.connection instanceof DataSource) return Database.connection;
-        
-        try {
-            const config = {
-                ...ormConfig,
-                entities: [Register]
-            } as DataSourceOptions;
-            Database.connection = await new DataSource(config).initialize();
-        } catch (error) {
-            this.logger.log(LoggerLevels.DEBUG, 'Cannot establish database connection');
-            this.logger.log(LoggerLevels.ERROR, error);
-        }
-        
-        this.logger.log(LoggerLevels.DEBUG, `Connection established`);
-        return Database.connection;
-    }
-
-    public async getRepository(repository: any): Promise<any> {
-        const connection = await this.getConnection();
-        return connection.getRepository(repository);
-    }
+    return connection;
 }
+// @injectable()
+// class Database {
+//     private static connection: Pool;
 
-export default Database;
+//     public async getConnection(): Promise<Pool> {
+//         // this.logger.log(LoggerLevels.DEBUG, `Getting DataSource connection...`);
+
+//         if (Database.connection instanceof Database) return Database.connection;
+        
+//         try {
+//             Database.connection = await createPool({
+//                 host: process.env.HOST,
+//                 user: process.env.USER,
+//                 password: process.env.PASSWORD,
+//                 database: process.env.DATABASE,
+//                 connectionLimit: Number(process.env.CONNECTION_LIMIT)
+//             });
+//         } catch (error) {
+//             // this.logger.log(LoggerLevels.DEBUG, 'Cannot establish database connection');
+//             // this.logger.log(LoggerLevels.ERROR, error);
+//         }
+        
+//         // this.logger.log(LoggerLevels.DEBUG, `Connection established`);
+//         return Database.connection;
+//     }
+// }
+
+// export default Database;
