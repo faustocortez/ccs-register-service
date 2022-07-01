@@ -1,4 +1,5 @@
 export const TYPES = {
+    Database: Symbol('Database'),
     Logger: Symbol('Logger'),
-    Database: Symbol('Database')
+    RegisterService: Symbol('RegisterService')
 };

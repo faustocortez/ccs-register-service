@@ -11,9 +11,7 @@ dotenv.config();
 class Database {
     private static connection: Pool;
 
-    private readonly logger: Logger;
-
-    public constructor(@inject(TYPES.Logger) logger: Logger) {}
+    public constructor(@inject(TYPES.Logger) private logger: Logger) {}
 
     public async getConnection(): Promise<Pool> {
         this.logger.log(LogLevel.DEBUG, `Getting DataSource connection...`);
@@ -37,9 +35,9 @@ class Database {
         return Database.connection;
     }
 
-    public async query(query: string) {
+    public async query(query: string, preparedStatements: (string | number)[]) {
         const connection = await this.getConnection();
-        return connection.query(query);
+        return connection.query(query, preparedStatements);
     }
 }
 

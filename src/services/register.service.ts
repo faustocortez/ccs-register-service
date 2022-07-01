@@ -16,7 +16,7 @@ class RegisterService implements IRegisterService {
     ) {}
 
     public async getRegisters(params?: { [key: string]: string; }): Promise<RowDataPacket[]> {
-        const result = await this.database.query('SELECT * FROM class.register LIMIT 10');
+        const result = await this.database.query('SELECT * FROM calls.register LIMIT ?', [1]);
         const registers = result[0] as RowDataPacket[];
         return registers;
     }
