@@ -63,6 +63,6 @@ export class Register {
     @Column({ type: 'varchar', length: 100, nullable: false }) // default: ''
     idCliente: string;
 
-    @Column({ type: 'date', length: 100, nullable: false }) // default: '0000-00-00'
+    @Column({ type: 'date', nullable: false }) // default: '0000-00-00'
     fechaIng: Date;
 }
