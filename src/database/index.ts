@@ -35,9 +35,9 @@ class Database {
         return Database.connection;
     }
 
-    public async query(query: string, preparedStatements: (string | number)[]) {
+    public async query(query: string, preparedStatements?: (string | number | unknown)[]) {
         const connection = await this.getConnection();
-        return connection.query(query, preparedStatements);
+        return (preparedStatements) ? connection.query(query, preparedStatements) : connection.query(query);
     }
 }
 

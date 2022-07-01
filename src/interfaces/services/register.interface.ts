@@ -2,6 +2,7 @@ import { RowDataPacket } from "mysql2";
 
 export interface IRegisterService {
     getRegisters(params?: { [key: string]: string }): Promise<RowDataPacket[]>;
+    getRegistersByFilter(queryStringParameters?: string): Promise<RowDataPacket[]>;
 }
 
 /** { idRegistro }
