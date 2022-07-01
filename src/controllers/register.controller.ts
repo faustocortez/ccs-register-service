@@ -23,8 +23,8 @@ export class RegisterController extends BaseHttpController {
     }
 
     @httpGet("/filter")
-    public async byFilters(@queryParam('filter') filter: string) {
-        this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => index`);
+    public async byFilter(@queryParam('filter') filter: string) {
+        this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => byFilter`);
         const registers = await this.registerService.getRegistersByFilter(filter);
         return this.json({ registers });
     }
