@@ -6,7 +6,7 @@ import { TYPES } from '../core/types';
 import Database from '../database';
 import { RowDataPacket } from 'mysql2';
 
-const getPairLogEvent = `SELECT * FROM register WHERE agente = ? AND fecha = ? AND idEvento IN (?);`;
+const getPairLogEvent = `SELECT * FROM register WHERE agente = ? AND fecha = ? AND idEvento IN (?) ORDER BY inicia ASC;`;
 @injectable()
 class RegisterService implements IRegisterService {
 
@@ -28,6 +28,16 @@ class RegisterService implements IRegisterService {
         const preparedValues = Object.values(filters[0]);
         this.logger.log(LogLevel.DEBUG, 'prepared', preparedValues);
         
+        const result = await this.database.query(getPairLogEvent, preparedValues);
+        const registers = result[0] as RowDataPacket[];
+        
+        return registers;
+    }
+
+    public async getRegistersByParams(params: { [key: string]: unknown; }): Promise<RowDataPacket[]> {
+        this.logger.log(LogLevel.DEBUG, 'params', params);
+        const preparedValues = Object.values(params);
+        this.logger.log(LogLevel.DEBUG, 'prepared', preparedValues);
         const result = await this.database.query(getPairLogEvent, preparedValues);
         const registers = result[0] as RowDataPacket[];
         
