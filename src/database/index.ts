@@ -36,6 +36,11 @@ class Database {
         this.logger.log(LogLevel.DEBUG, `Connection established`);
         return Database.connection;
     }
+
+    public async query(query: string) {
+        const connection = await this.getConnection();
+        return connection.query(query);
+    }
 }
 
 export default Database;
