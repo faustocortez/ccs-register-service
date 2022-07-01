@@ -15,7 +15,7 @@ export class HomeController {
     // const db = new Database();
     // const conn = await db.getConnection();
     const conn = await connect();
-    const registers = await conn.query('SELECT * FROM calls.register7874 limit 10;')
+    const registers = await conn.query('SELECT * FROM calls.register limit 10;')
     return res.json({ registers });
   }
 }

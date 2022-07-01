@@ -12,7 +12,7 @@ export async function connect() {
     const connection = await createPool({
         host: 'localhost',
         user: 'root',
-        password: 'mysqlserver!!',
+        password: '9b289300!A',
         database: 'calls',
         connectionLimit: 10
     });
