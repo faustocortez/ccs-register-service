@@ -43,6 +43,26 @@ class RegisterService implements IRegisterService {
         
         return registers;
     }
+    
+    public async getPairsOrderByAgent(): Promise<RowDataPacket[]> {
+        // Pairs are those registers that have either "Conectado"
+        // or "Desconectado" value in "evento" property.
+        this.logger.log(LogLevel.DEBUG, 'Getting pairs in MySQL DB');
+        const result = await this.database.query("SELECT * FROM register WHERE idEvento IN (4,300) ORDER BY agente;");
+        const registers = result[0] as RowDataPacket[];
+        this.logger.log(LogLevel.DEBUG, `Query pairs result [${registers.length}]:`, registers);
+        
+        return registers;
+    }
+
+    public async getAgentsId(): Promise<RowDataPacket[]> {
+        this.logger.log(LogLevel.DEBUG, 'Getting agents id in MySQL DB');
+        const result = await this.database.query("SELECT distinct(agente) FROM register ORDER BY agente;");
+        const registers = result[0] as RowDataPacket[];
+        this.logger.log(LogLevel.DEBUG, `Query agents result [${registers.length}]:`, registers, false);
+        
+        return registers;
+    }
 }
 
 export default RegisterService;

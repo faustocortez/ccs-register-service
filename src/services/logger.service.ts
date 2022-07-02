@@ -7,12 +7,14 @@ class Logger implements ILogger{
     public log(
       level: LogLevel,
       message: string,
-      data?: Array<unknown> | Record<string, unknown>
+      data?: Array<unknown> | Record<string, unknown>,
+      pretty?: boolean
     ): void {
       const time = new Date().toISOString();
       const log = `${time} - [${level}]: ${message}`;
       console.log(log);
-      if (data) console.log(JSON.stringify(data, null, 2));
+      if (data && !pretty) console.log(JSON.stringify(data));
+      if (data && pretty) console.log(data);
     }
 }
 

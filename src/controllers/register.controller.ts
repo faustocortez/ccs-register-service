@@ -3,6 +3,7 @@ import { id, inject } from "inversify";
 import { BaseHttpController, controller, httpGet, queryParam, requestParam } from "inversify-express-utils";
 import { TYPES } from "../core/types";
 import { LogLevel } from "../interfaces/services/logger.interface";
+import { IRegister } from "../interfaces/services/register.interface";
 import Logger from "../services/logger.service";
 import RegisterService from "../services/register.service";
 
@@ -40,62 +41,47 @@ export class RegisterController extends BaseHttpController {
         return this.json({ registers });
     }
 
-    @httpGet("/:agente/logs")
-    public async addMissingLog(
-        @requestParam('agente') agente: string,
-        @queryParam('fecha') fecha: string,
-        @queryParam('idEvento') idEvento: string
-    ) {
-        const eventos: number[] = (idEvento.split(',')).map(e => Number(e));
-        const params = { agente, fecha, idEvento: eventos };
-        this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => addMissingLog`, params);
-        const registers = await this.registerService.getRegistersByParams(params);
-        // Validate if there missing logs
-        if (registers.length % 2 === 0) {
-            this.logger.log(LogLevel.INFO, `"Agente" with id: ${ agente }, has the logs completed...`);
-        } else {
-            // Check which log is missing (Conectado [ID: 4] | Desconectado [ID: 300])
-            this.logger.log(LogLevel.INFO, `"Agente" with id: ${ agente }, has inconsistency with the logs ${registers.length}`);
-            let events = {
-                0: 'Conectado',
-                1: 'Desconectado'
-            };
-            let counter = 0;
-            let referece = [];
-            for (let index = 0; index < registers.length; index++) {
-                const { evento } = registers[index];
-                this.logger.log(LogLevel.DEBUG, `\nITERATION ${index}`, { counter, evento });
-                const event = events[counter]
-
-                switch (counter) {
-                    case 0:
-                        counter++;
-                        if (evento === event) {
-                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
-                            continue;
-                        } else {
-                            this.logger.log(LogLevel.ERROR, `event should be: "${event}" but got "${evento}" instead`);
-                            referece.push(registers[index]);
-                        }
-                        break;
-                    case 1:
-                        counter++;
-                        if (evento === event) {
-                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
-                            continue;
-                        } else {
-                            this.logger.log(LogLevel.ERROR, `event should be: "${event}" but got "${evento}" instead`);
-                            referece.push(registers[index]);
-                        }
-                        break;
-                }
-            };
-
-            // const { evento } = registers[missingLogPosition];
-            // this.logger.log(LogLevel.INFO, `Register.evento: ${ evento }`);
-            // return this.json({ register })
-            
+    @httpGet("/pairs")
+    public async byPairs() {
+        // Get registers pairs ("Conectado" y "Desconectado") order by agent
+        this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => byPairs`);
+        const registers = await this.registerService.getPairsOrderByAgent() as IRegister[];
+        if (!registers) {
+            const message = 'Theres no registers found!'
+            this.logger.log(LogLevel.ERROR, message, registers);
+            throw new Error(message);
         }
-        return this.json({ registers });
+
+        // Map agent ids ("agente") from obtained registers
+        this.logger.log(LogLevel.DEBUG, `Map agents ids from pairs registers [${registers.length}]`);
+        let agentIds: string[] = registers.map(({ agente }) => agente);
+        agentIds = Array.from(new Set(agentIds));
+        this.logger.log(LogLevel.DEBUG, `Mapped agents ids: [${agentIds.length}]`, agentIds);
+        
+        // Group pairs in  arrays by agent id
+        let pairsAgent: { [key: string]: IRegister[] } = {};
+        let currentIdAgent: string = agentIds[0];
+        let logsByAgent: IRegister[] = [];
+        this.logger.log(LogLevel.DEBUG, `Group pairs registers by agent id ${currentIdAgent}`);
+        registers.forEach((register, index) => {
+            const { agente } = register;
+            this.logger.log(LogLevel.DEBUG, `Register's agent: ${agente}`);
+            if (currentIdAgent === agente) {
+                this.logger.log(LogLevel.INFO, `Pushing register to agent: ${currentIdAgent}`);
+                logsByAgent.push(register);
+                if (index === (registers.length - 1)) {
+                    this.logger.log(LogLevel.INFO, `Adding last array of registers: [${logsByAgent.length}]`);
+                    pairsAgent[agente] = [...logsByAgent];
+                }
+            } else {
+                this.logger.log(LogLevel.INFO, `Total registers [${logsByAgent.length}] for agent ${currentIdAgent}`);
+                pairsAgent[currentIdAgent] = logsByAgent;
+                currentIdAgent = agente;
+                this.logger.log(LogLevel.INFO, `Updated currentIdAgent: ${currentIdAgent}`);
+                logsByAgent = [register];
+                this.logger.log(LogLevel.INFO, `Pushed first register for currentIdAgent: ${currentIdAgent}`);
+            }
+        });
+        this.logger.log(LogLevel.DEBUG, `Grouped pairs logs => `, pairsAgent, true);
     }
 }
