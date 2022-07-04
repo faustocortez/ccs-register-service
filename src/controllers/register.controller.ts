@@ -84,7 +84,7 @@ export class RegisterController extends BaseHttpController {
         });
         this.logger.log(LogLevel.DEBUG, `Grouped pairs logs => `, mappedGroupPairs, true);
 
-        // Check if some pair log is missing
+        // Searching pair log is missing
         let references: IPairRegisterReference[] = [];
         for (const [agente, pairs] of Object.entries(mappedGroupPairs)) {
             this.logger.log(LogLevel.DEBUG, `Id agent: ${agente}`);
@@ -92,68 +92,98 @@ export class RegisterController extends BaseHttpController {
             let register: IRegister = pairs[0];
             let { evento } = register;
             let events = {  0: 'Conectado', 1: 'Desconectado' };
+            let missingPair: string;
 
             if (pairs.length === 1) {
-                this.logger.log(LogLevel.DEBUG, `This agent only has one single register: ${evento}`, { ...pairs[0] }, true);
-                this.logger.log(LogLevel.INFO, `Missing pair: ${evento === events[0] ? events[1] : evento}`)
+                missingPair = evento === events[0] ? events[1] : events[0];
+                this.logger.log(LogLevel.DEBUG, `This agent only has one single register: ${evento}`, { ...pairs[0] });
+                this.logger.log(LogLevel.INFO, `Missing pair: ${missingPair}`);
                 references.push({
                     agentId: agente,
-                    missingPair: evento === events[0] ? events[1] : evento,
-                    referencePair: register
+                    missingPair,
+                    [missingPair === events[0] ? 'currentPair' : 'previousPair']: register
                 });
-                this.logger.log(LogLevel.DEBUG, `finish pairs, reference:`, references, true);
 
                 continue;
             }
 
-            if (pairs.length % 2 !== 0) {
-                let counter = 0;
-                for (let index = 0; index < pairs.length; index++) {
-                    register = pairs[index];
-                    evento = register.evento;
-                    this.logger.log(LogLevel.DEBUG, `ITERATION ${index}`, { counter, evento });
-                    const event = events[counter]
-                    switch (counter) {
-                        case 0:
+            let counter = 0;
+            for (let index = 0; index < pairs.length; index++) {
+                register = pairs[index];
+                evento = register.evento;
+                this.logger.log(LogLevel.DEBUG, `ITERATION ${index}`, { counter, evento });
+                const event = events[counter]
+                switch (counter) {
+                    case 0:
+                        if (evento === event) {
                             counter++;
-                            if (evento === event) {
-                                this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
-                                continue;
-                            } else {
-                                this.logger.log(LogLevel.ERROR, `event should be: "${event}" but got "${evento}" instead`);
-                                this.logger.log(LogLevel.INFO, `Missing pair: ${event}`);
-                                this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
+                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
+                            continue;
+                        } else {
+                            counter = 0;
+                            this.logger.log(LogLevel.ERROR, `event should be: "${event}" but got "${evento}" instead`);
+                            this.logger.log(LogLevel.INFO, `Missing pair: ${event}`);
+                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
+                            console.log(index);
+                            let reference = {
+                                currentPair: register,
+                                previousPair: pairs[index === 0 ? 0 : (index - 1)]
+                            };
 
-                                references.push({
-                                    agentId: agente,
-                                    missingPair: event,
-                                    referencePair: register
-                                });
-                            }
-                            break;
-                        case 1:
-                            counter = evento === events[0] ? counter : 0;
-                            if (evento === event) {
-                                this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
-                                continue;
-                            } else {
-                                this.logger.log(LogLevel.ERROR, `event should be: "${event}" but got "${evento}" instead`);
-                                this.logger.log(LogLevel.INFO, `Missing pair: ${event}`);
-                                this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
-                                
-                                references.push({
-                                    agentId: agente,
-                                    missingPair: event,
-                                    referencePair: register
-                                });
-                            }
-                            break;
-                    }
+                            references.push({
+                                agentId: agente,
+                                missingPair: event,
+                                ...reference
+                            });
+                        }
+                        break;
+                    case 1:
+                        counter = evento === events[0] ? counter : 0;
+                        if (evento === event) {
+                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
+                            continue;
+                        } else {
+                            this.logger.log(LogLevel.ERROR, `event should be: "${event}" but got "${evento}" instead`);
+                            this.logger.log(LogLevel.INFO, `Missing pair: ${event}`);
+                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
+                            let reference = {
+                                currentPair: register,
+                                previousPair: pairs[index === 0 ? 0 : (index - 1)]
+                            };
+                            references.push({
+                                agentId: agente,
+                                missingPair: event,
+                                ...reference
+                            });
+                        }
+                        break;
                 }
-                this.logger.log(LogLevel.DEBUG, `finish pairs, reference:`, references, true);
-            } else {
-                this.logger.log(LogLevel.INFO, `This agent "${agente}" has its logs complete`);
             }
+        }
+        this.logger.log(LogLevel.DEBUG, `Finish pairs, reference:`, references, true);
+        
+        // Check if some pair log is missing
+        if (references.length) {
+            // for (let index = 0; index < references.length; index++) {
+            //     const reference = references[index];
+            //     const { agentId, missingPair } = reference;
+
+            //     switch (missingPair) {
+            //         case 'Conectado':
+            //             let minDate = reference.previousPair.inicia ?? null;
+            //             let maxDate = reference.currentPair.inicia;
+            //             let query  =  "SELECT * FROM register WHERE inicia ="
+                        
+            //             break;
+                
+            //         default:
+
+            //             break;
+            //     }
+                
+            // }
+        } else {
+            this.logger.log(LogLevel.INFO, `Theres not missed logs`);
         }
     }
 }

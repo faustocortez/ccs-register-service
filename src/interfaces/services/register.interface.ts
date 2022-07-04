@@ -39,5 +39,7 @@ export interface IRegister {
 export interface IPairRegisterReference {
     agentId: string; // agente
     missingPair: string; // missing pair (most likely "Desconectado")
-    referencePair: IRegister; // existing pair
+    // referencePair: IRegister; // existing pair
+    previousPair?: IRegister; // existing pair
+   currentPair?: IRegister; // existing pair
 }
