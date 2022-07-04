@@ -35,3 +35,9 @@ export interface IRegister {
     idCliente: string;
     fechaIng: Date; // '0000-00-00'
 }
+
+export interface IPairRegisterReference {
+    agentId: string; // agente
+    missingPair: string; // missing pair (most likely "Desconectado")
+    referencePair: IRegister; // existing pair
+}
