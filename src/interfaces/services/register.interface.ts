@@ -5,7 +5,8 @@ export interface IRegisterService {
     getRegistersByFilter(queryStringParameters: string): Promise<RowDataPacket[]>;
     getRegistersByParams(params: { [key: string]: unknown }): Promise<RowDataPacket[]>;
     getPairsOrderByAgent(): Promise<RowDataPacket[]>;
-    getAgentsId(): Promise<RowDataPacket[]>
+    getAgentsId(): Promise<RowDataPacket[]>;
+    getDbQuery(query: string, preparedValues: unknown[]): Promise<RowDataPacket[]>;
 }
 
 /** { idRegistro }

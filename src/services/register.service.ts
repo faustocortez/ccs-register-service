@@ -63,6 +63,15 @@ class RegisterService implements IRegisterService {
         
         return registers;
     }
+
+    public async getDbQuery(query: string, preparedValues?: (string | number)[]): Promise<RowDataPacket[]> {
+        this.logger.log(LogLevel.DEBUG, `Getting query: ${ query }`);
+        const result = await this.database.query(query, preparedValues);
+        const registers = result[0] as RowDataPacket[];
+        this.logger.log(LogLevel.DEBUG, `Query agents result [${registers.length}]:`, registers, false);
+        
+        return registers;
+    }
 }
 
 export default RegisterService;

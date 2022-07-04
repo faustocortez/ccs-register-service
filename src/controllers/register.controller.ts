@@ -1,6 +1,6 @@
 import { Request } from "express";
-import { id, inject } from "inversify";
-import { BaseHttpController, controller, httpGet, queryParam, requestParam } from "inversify-express-utils";
+import { inject } from "inversify";
+import { BaseHttpController, controller, httpGet, queryParam } from "inversify-express-utils";
 import { TYPES } from "../core/types";
 import { LogLevel } from "../interfaces/services/logger.interface";
 import { IPairRegisterReference, IRegister } from "../interfaces/services/register.interface";
@@ -34,9 +34,13 @@ export class RegisterController extends BaseHttpController {
     @httpGet("/params")
     public async byParams(req: Request) {
         const params = req.query;
-        if ('idEvento' in params) params.idEvento
-        console.log(LogLevel.DEBUG, req);
-        this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => byFilter`);
+        if ('idEvento' in params) {
+            const idEvento = params.idEvento as string;
+            params.idEvento = idEvento.split(',');
+        }
+        
+        console.log(LogLevel.DEBUG, params);
+        this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => byParams`);
         const registers = await this.registerService.getRegistersByParams(params);
         return this.json({ registers });
     }
@@ -117,13 +121,25 @@ export class RegisterController extends BaseHttpController {
                     case 0:
                         if (evento === event) {
                             counter++;
-                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
+                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${(index + 1)}`);
+                            if ((pairs.length - 1) === index) {
+                                console.log('last: ', evento);
+                                let reference = {
+                                    currentPair: register,
+                                    previousPair: pairs[index === 0 ? 0 : (index - 1)]
+                                };
+                                references.push({
+                                    agentId: agente,
+                                    missingPair: events[1],
+                                    ...reference
+                                });
+                            }
                             continue;
                         } else {
                             counter = 0;
                             this.logger.log(LogLevel.ERROR, `event should be: "${event}" but got "${evento}" instead`);
                             this.logger.log(LogLevel.INFO, `Missing pair: ${event}`);
-                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
+                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${(index + 1)}`);
                             console.log(index);
                             let reference = {
                                 currentPair: register,
@@ -163,27 +179,48 @@ export class RegisterController extends BaseHttpController {
         this.logger.log(LogLevel.DEBUG, `Finish pairs, reference:`, references, true);
         
         // Check if some pair log is missing
-        if (references.length) {
-            // for (let index = 0; index < references.length; index++) {
-            //     const reference = references[index];
-            //     const { agentId, missingPair } = reference;
+        // if (references.length) {
+        //     for (let index = 0; index < references.length; index++) {
+        //         const reference = references[index];
+        //         const { agentId, missingPair } = reference;
+        //         console.log('missingPair', missingPair);
+        //         switch (missingPair) {
+        //             case 'Desconectado':
+        //                 let minDate = reference?.previousPair?.inicia ?? '00:00:00'; // ask for default
+        //                 let maxDate = reference.currentPair.inicia;
+        //                 let query  =  `SELECT * FROM register WHERE agente="${agentId}" AND inicia BETWEEN "${minDate}" AND "${maxDate}"`;
+        //                 console.log('queyr', query);
+        //                 const registers = await this.registerService.getDbQuery(query) as IRegister[];
+        //                 const penultimateLog = registers[registers.length - 2];
+        //                 let logToAdd: IRegister = {
 
-            //     switch (missingPair) {
-            //         case 'Conectado':
-            //             let minDate = reference.previousPair.inicia ?? null;
-            //             let maxDate = reference.currentPair.inicia;
-            //             let query  =  "SELECT * FROM register WHERE inicia ="
+        //                 };
+        //                 if (penultimateLog.evento === 'loguear') {
+        //                     // restar un seg del penultimo inicia para el terminar
+        //                     // sumar un seg del antepenultimo termina para el inicio
+        //                 }
                         
-            //             break;
+        //                 break;
                 
-            //         default:
+        //             // default:
+        //             //     let minDate2 = reference?.previousPair?.inicia ?? '00:00:00';
+        //             //     let maxDate2 = reference.currentPair.inicia;
+        //             //     let query2  =  `SELECT * FROM register WHERE agente="${agentId}" AND inicia BETWEEN "${minDate2}" AND "${maxDate2}"`;
+                        
+        //             //     // const registers2 = await this.registerService.getDbQuery(query2);
+        //             //     break;
+        //         }
+                
+        //     }
+        // } else {
+        //     this.logger.log(LogLevel.INFO, `Theres not missed logs`);
+        // }
+    }
 
-            //             break;
-            //     }
-                
-            // }
-        } else {
-            this.logger.log(LogLevel.INFO, `Theres not missed logs`);
-        }
+    @httpGet("/query")
+    public async byQuery(@queryParam('q') q: string) {
+        this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => byQuery`);
+        const registers = await this.registerService.getDbQuery(q);
+        return this.json({ registers });
     }
 }
