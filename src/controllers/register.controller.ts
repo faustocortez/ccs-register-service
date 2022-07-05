@@ -58,14 +58,13 @@ export class RegisterController extends BaseHttpController {
         this.logger.log(LogLevel.DEBUG, `Grouped pairs logs => `, mappedGroupPairs);
 
         // Searching pair log is missing
-        this.logger.log(LogLevel.DEBUG, `Finding missing pair registers...`);
+        this.logger.log(LogLevel.DEBUG, `Finding missing register of the pair...`);
         let references: IPairRegisterReference[] = [];
+        let events = {  0: 'Conectado', 1: 'Desconectado' };
         for (const [agente, pairs] of Object.entries(mappedGroupPairs)) {
             this.logger.log(LogLevel.DEBUG, `Current "agente" value: ${agente}`);
-            
             let register: IRegister = pairs[0];
             let { evento } = register;
-            let events = {  0: 'Conectado', 1: 'Desconectado' };
             let missingPair: string;
 
             // CASE: "agente" only have one register
@@ -89,37 +88,31 @@ export class RegisterController extends BaseHttpController {
                 register = pairs[index];
                 evento = register.evento;
 
-                // Validate which register.evento is the missing one ("Conectado" or "Desconectado")
+                // Validate which register.evento is the missing one ("Conectado" = 0 or "Desconectado" = 1)
                 switch (counter) {
                     case 0:
                         if (evento === event) {
                             counter++;
                             if ((pairs.length - 1) === index) {
                                 this.logger.log(LogLevel.DEBUG, `Event "${evento}" found but its the last register, means that "${events[1]}" is missing\n`);
-                                let reference = {
-                                    currentPair: register,
-                                    previousPair: pairs[index === 0 ? 0 : (index - 1)]
-                                };
                                 references.push({
                                     agentId: agente,
                                     missingPair: events[1],
-                                    ...reference
+                                    currentPair: register,
+                                    ...(index !== 0 && { previousPair: pairs[(index - 1)] })
                                 });
                             }
                             continue;
                         } else {
                             counter = 0;
                             this.logger.log(LogLevel.ERROR, `Event should be: "${event}" but got "${evento}" instead`);
-                            this.logger.log(LogLevel.DEBUG, `Missing pair: ${event}\n`);
-                            let reference = {
-                                currentPair: register,
-                                previousPair: pairs[index === 0 ? 0 : (index - 1)]
-                            };
+                            this.logger.log(LogLevel.DEBUG, `Missing pair: ${event} index ${index}\n`);
 
                             references.push({
                                 agentId: agente,
                                 missingPair: event,
-                                ...reference
+                                currentPair: register,
+                                ...(index !== 0 && { previousPair: pairs[(index - 1)] })
                             });
                         }
                         break;
@@ -128,10 +121,10 @@ export class RegisterController extends BaseHttpController {
                         if (evento === event) continue;
                         else {
                             this.logger.log(LogLevel.ERROR, `Event should be: "${event}" but got "${evento}" instead`);
-                            this.logger.log(LogLevel.DEBUG, `Missing pair: ${event}\n`);
+                            this.logger.log(LogLevel.DEBUG, `Missing pair: ${event} index ${index}\n`);
                             let reference = {
                                 currentPair: register,
-                                previousPair: pairs[index === 0 ? 0 : (index - 1)]
+                                previousPair: pairs[index !== 0 ? (index - 1) : 0]
                             };
                             references.push({
                                 agentId: agente,
@@ -147,55 +140,48 @@ export class RegisterController extends BaseHttpController {
 
         // Calculate dates for "inicia" and "termina" to create and insert the missing register
         if (references.length) {
-            for (let index = 0; index < 1; index++) {
+            for (let index = 0; index < references.length; index++) {
                 const reference = references[index];
                 const { agentId, missingPair } = reference;
-                console.log('missingPair', missingPair);
-                switch (missingPair) {
-                    case 'Desconectado':
-                        const minDate = reference?.previousPair?.inicia ?? '00:00:00'; // ask for default
-                        const maxDate = reference?.currentPair?.inicia;
-                        const tail = maxDate ? ` AND "${maxDate}"` : '';
-                        const query  = `SELECT * FROM datos1 WHERE agente="${agentId}" AND inicia >= "${minDate}"${tail}`;
-                        const registers = await this.registerService.getDbQuery(query) as IRegister[];
-                        let pairToInsert = {} as IRegister;
-                        if (registers.length > 2) {
-                            const penultimateLog = registers[registers.length - 2];
-                            if (penultimateLog.evento === 'loguear') {
-                                // restar un seg del penultimo inicia para el terminar
-                                // sumar un seg del antepenultimo termina para el inicio
-                            }
-                        } else {
-                            // It means that the "agente" only has one pair
-                            // create missing register
-                            this.logger.log(LogLevel.DEBUG, `datetime : ${reference.previousPair.fecha} ${minDate}`);
-                            const sum: Date = addSeconds(new Date(`${reference.previousPair.fecha} ${minDate}`), 1);
-                            this.logger.log(LogLevel.DEBUG, `sum date: ${sum}`);
-                            const startDate = format(sum, 'HH:mm:ss');
-                            this.logger.log(LogLevel.DEBUG, `start date: ${startDate}`);
-                            pairToInsert = {
-                                ...reference.previousPair,
-                                idEvento: 300,
-                                evento: missingPair,
-                                inicia: startDate
-                            }
-                            delete pairToInsert.idRegistro;
-                            console.log(`snew`, pairToInsert);
-                            const nr = await this.registerService.getDbQuery('CREATE ')
-                            break;
+                this.logger.log(LogLevel.DEBUG, `Missing pair of "agente" ${agentId}: ${missingPair}`, references[index] as unknown as Record<string, unknown>);
+                let minDate: string; // ask for default
+                let maxDate: string; // ask for default
+                let query: string;
+                let registers: IRegister[];
+                let pairToInsert = {} as IRegister;
+                
+                if (missingPair === events[1]) {
+                    minDate = reference?.previousPair?.inicia ?? '00:00:00'; // ask for default
+                    maxDate = reference?.currentPair?.inicia;
+                    const andIniciaLowerThan = maxDate ? ` AND inicia < "${maxDate}"` : '';
+                    query  = `SELECT * FROM datos1 WHERE agente="${agentId}" AND inicia > "${minDate}"${andIniciaLowerThan}`;
+                    registers = await this.registerService.getDbQuery(query) as IRegister[];
+                    if (registers.length > 2) {
+                        this.logger.log(LogLevel.DEBUG, 'many missing');
+                        const penultimateLog = registers[registers.length - 2];
+                        if (penultimateLog.evento === 'loguear') {
+                            // restar un seg del penultimo inicia para el terminar
+                            // sumar un seg del antepenultimo termina para el inicio
                         }
-                        
-                        break;
-                
-                    // default:
-                    //     let minDate2 = reference?.previousPair?.inicia ?? '00:00:00';
-                    //     let maxDate2 = reference.currentPair.inicia;
-                    //     let query2  =  `SELECT * FROM register WHERE agente="${agentId}" AND inicia BETWEEN "${minDate2}" AND "${maxDate2}"`;
-                        
-                    //     // const registers2 = await this.registerService.getDbQuery(query2);
-                    //     break;
-                }
-                
+                    } else {
+                        // It means that the "agente" only has one pair
+                        // create missing register
+                        this.logger.log(LogLevel.DEBUG, `datetime : ${reference.previousPair.fecha} ${minDate}`);
+                        const sum: Date = addSeconds(new Date(`${reference.previousPair.fecha} ${minDate}`), 1);
+                        this.logger.log(LogLevel.DEBUG, `sum date: ${sum}`);
+                        const startDate = format(sum, 'HH:mm:ss');
+                        this.logger.log(LogLevel.DEBUG, `start date: ${startDate}`);
+                        pairToInsert = {
+                            ...reference.previousPair,
+                            idEvento: 300,
+                            evento: missingPair,
+                            inicia: startDate
+                        }
+                        delete pairToInsert.idRegistro;
+                        console.log(`new`, pairToInsert);
+                        // const nr = await this.registerService.getDbQuery('CREATE ');
+                    }
+                }   
             }
         } else {
             this.logger.log(LogLevel.DEBUG, `Theres not missed logs`);
