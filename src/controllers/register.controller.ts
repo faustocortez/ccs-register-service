@@ -38,8 +38,7 @@ export class RegisterController extends BaseHttpController {
             const idEvento = params.idEvento as string;
             params.idEvento = idEvento.split(',');
         }
-        
-        console.log(LogLevel.DEBUG, params);
+
         this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => byParams`);
         const registers = await this.registerService.getRegistersByParams(params);
         return this.json({ registers });
@@ -69,24 +68,21 @@ export class RegisterController extends BaseHttpController {
         this.logger.log(LogLevel.DEBUG, `Group pairs registers by agent id ${currentIdAgent}`);
         registers.forEach((register, index) => {
             const { agente } = register;
-            this.logger.log(LogLevel.DEBUG, `Register's agent: ${agente}`);
             if (currentIdAgent === agente) {
-                this.logger.log(LogLevel.INFO, `Pushing register to agent: ${currentIdAgent}`);
                 logsByAgent.push(register);
                 if (index === (registers.length - 1)) {
-                    this.logger.log(LogLevel.INFO, `Adding last array of registers: [${logsByAgent.length}]`);
+                    this.logger.log(LogLevel.DEBUG, `Adding last array of registers: [${logsByAgent.length}]`);
                     mappedGroupPairs[agente] = [...logsByAgent];
                 }
             } else {
-                this.logger.log(LogLevel.INFO, `Total registers [${logsByAgent.length}] for agent ${currentIdAgent}`);
+                this.logger.log(LogLevel.DEBUG, `Total registers [${logsByAgent.length}] for agent ${currentIdAgent}`);
                 mappedGroupPairs[currentIdAgent] = logsByAgent;
                 currentIdAgent = agente;
-                this.logger.log(LogLevel.INFO, `Updated currentIdAgent: ${currentIdAgent}`);
-                logsByAgent = [register];
-                this.logger.log(LogLevel.INFO, `Pushed first register for currentIdAgent: ${currentIdAgent}`);
+                this.logger.log(LogLevel.DEBUG, `Updated currentIdAgent: ${currentIdAgent}`);
+                logsByAgent = [register]; // first register of updated currentId
             }
         });
-        this.logger.log(LogLevel.DEBUG, `Grouped pairs logs => `, mappedGroupPairs, true);
+        this.logger.log(LogLevel.DEBUG, `Grouped pairs logs => `, mappedGroupPairs);
 
         // Searching pair log is missing
         let references: IPairRegisterReference[] = [];
@@ -100,8 +96,8 @@ export class RegisterController extends BaseHttpController {
 
             if (pairs.length === 1) {
                 missingPair = evento === events[0] ? events[1] : events[0];
-                this.logger.log(LogLevel.DEBUG, `This agent only has one single register: ${evento}`, { ...pairs[0] });
-                this.logger.log(LogLevel.INFO, `Missing pair: ${missingPair}`);
+                this.logger.log(LogLevel.DEBUG, `This agent only has one single register: ${evento}`);
+                this.logger.log(LogLevel.DEBUG, `Missing pair: ${missingPair}`);
                 references.push({
                     agentId: agente,
                     missingPair,
@@ -121,9 +117,8 @@ export class RegisterController extends BaseHttpController {
                     case 0:
                         if (evento === event) {
                             counter++;
-                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${(index + 1)}`);
+                            this.logger.log(LogLevel.DEBUG, `counter = ${counter} go to next iteration ${(index + 1)}`);
                             if ((pairs.length - 1) === index) {
-                                console.log('last: ', evento);
                                 let reference = {
                                     currentPair: register,
                                     previousPair: pairs[index === 0 ? 0 : (index - 1)]
@@ -138,9 +133,8 @@ export class RegisterController extends BaseHttpController {
                         } else {
                             counter = 0;
                             this.logger.log(LogLevel.ERROR, `event should be: "${event}" but got "${evento}" instead`);
-                            this.logger.log(LogLevel.INFO, `Missing pair: ${event}`);
-                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${(index + 1)}`);
-                            console.log(index);
+                            this.logger.log(LogLevel.DEBUG, `Missing pair: ${event}`);
+                            this.logger.log(LogLevel.DEBUG, `counter = ${counter} go to next iteration ${(index + 1)}`);
                             let reference = {
                                 currentPair: register,
                                 previousPair: pairs[index === 0 ? 0 : (index - 1)]
@@ -156,12 +150,12 @@ export class RegisterController extends BaseHttpController {
                     case 1:
                         counter = evento === events[0] ? counter : 0;
                         if (evento === event) {
-                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
+                            this.logger.log(LogLevel.DEBUG, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
                             continue;
                         } else {
                             this.logger.log(LogLevel.ERROR, `event should be: "${event}" but got "${evento}" instead`);
-                            this.logger.log(LogLevel.INFO, `Missing pair: ${event}`);
-                            this.logger.log(LogLevel.INFO, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
+                            this.logger.log(LogLevel.DEBUG, `Missing pair: ${event}`);
+                            this.logger.log(LogLevel.DEBUG, `counter = ${counter} go to next iteration ${((index + 1) + 1)}`);
                             let reference = {
                                 currentPair: register,
                                 previousPair: pairs[index === 0 ? 0 : (index - 1)]
@@ -176,7 +170,7 @@ export class RegisterController extends BaseHttpController {
                 }
             }
         }
-        this.logger.log(LogLevel.DEBUG, `Finish pairs, reference:`, references, true);
+        this.logger.log(LogLevel.DEBUG, `Finish pairs, reference:`, references);
         
         // Check if some pair log is missing
         // if (references.length) {
@@ -213,7 +207,7 @@ export class RegisterController extends BaseHttpController {
                 
         //     }
         // } else {
-        //     this.logger.log(LogLevel.INFO, `Theres not missed logs`);
+        //     this.logger.log(LogLevel.DEBUG, `Theres not missed logs`);
         // }
     }
 
