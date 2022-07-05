@@ -5,6 +5,6 @@ import { controller, httpGet } from "inversify-express-utils";
 export class HomeController {
   @httpGet("")
   public index(req: Request, res: Response) {
-    return res.send("Bazinga!");
+    return res.send("CCS Mérida");
   }
 }

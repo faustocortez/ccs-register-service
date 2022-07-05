@@ -1,12 +1,7 @@
 import { RowDataPacket } from "mysql2";
 
 export interface IRegisterService {
-    getRegisters(): Promise<RowDataPacket[]>;
-    getRegistersByFilter(queryStringParameters: string): Promise<RowDataPacket[]>;
-    getRegistersByParams(params: { [key: string]: unknown }): Promise<RowDataPacket[]>;
-    getPairsOrderByAgent(): Promise<RowDataPacket[]>;
-    getAgentsId(): Promise<RowDataPacket[]>;
-    getDbQuery(query: string, preparedValues: unknown[]): Promise<RowDataPacket[]>;
+    getPairsOrderedByAgent(): Promise<RowDataPacket[]>;
 }
 
 /** { idRegistro }
@@ -40,7 +35,6 @@ export interface IRegister {
 export interface IPairRegisterReference {
     agentId: string; // agente
     missingPair: string; // missing pair (most likely "Desconectado")
-    // referencePair: IRegister; // existing pair
-    previousPair?: IRegister; // existing pair
-   currentPair?: IRegister; // existing pair
+    previousPair?: IRegister; // existing previous pair
+   currentPair?: IRegister; // existing current pair
 }

@@ -5,9 +5,9 @@ import { TYPES } from "./core/types";
 import { ILogger, LogLevel } from "./interfaces/services/logger.interface";
 import Database from "./database";
 
-const port = 3000;
-
+const port = process.env.PORT || 3000;
 const serverInstace = server.build();
+
 serverInstace.listen(port, async () => {
   const logger = container.get<ILogger>(TYPES.Logger);
   const db = container.get<Database>(TYPES.Database);
