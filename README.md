@@ -33,6 +33,6 @@ __Base local endpoint__
   http://localhost:3010
 ```
 
-## Autor ✒️
+## Author ✒️
 
 * **Fausto A. Cortez Cardoz** - *Software Developer*
