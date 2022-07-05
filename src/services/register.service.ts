@@ -6,7 +6,6 @@ import { TYPES } from '../core/types';
 import Database from '../database';
 import { RowDataPacket } from 'mysql2';
 
-const getPairLogEvent = `SELECT * FROM register WHERE agente = ? AND fecha = ? AND idEvento IN (?) ORDER BY inicia ASC;`;
 @injectable()
 class RegisterService implements IRegisterService {
 
@@ -19,7 +18,7 @@ class RegisterService implements IRegisterService {
         // Pairs are those registers that have either "Conectado"
         // or "Desconectado" value in "evento" property.
         this.logger.log(LogLevel.DEBUG, 'Getting pairs in MySQL DB');
-        const result = await this.database.query("SELECT * FROM datos1 WHERE idEvento IN (4,300) ORDER BY agente;");
+        const result = await this.database.query('SELECT * FROM datos1 WHERE idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;');
         const response = result[0] as RowDataPacket[];
         // Excluding registers with "agente" = 0
         let registers: RowDataPacket[] = [];
@@ -28,6 +27,15 @@ class RegisterService implements IRegisterService {
             if (agente != '0') registers.push(response[i]);
         }
         this.logger.log(LogLevel.DEBUG, `Query pairs result [${registers.length}]:`);
+        
+        return registers;
+    }
+
+    public async getDbQuery(query: string, preparedValues?: unknown[]): Promise<RowDataPacket[]> {
+        this.logger.log(LogLevel.DEBUG, `Getting query: ${ query }`);
+        const result = await this.database.query(query, preparedValues);
+        const registers = result[0] as RowDataPacket[];
+        this.logger.log(LogLevel.DEBUG, `Query agents result [${registers.length}]`);
         
         return registers;
     }

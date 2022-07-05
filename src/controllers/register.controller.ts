@@ -1,5 +1,6 @@
 import { inject } from "inversify";
 import { BaseHttpController, controller, httpGet } from "inversify-express-utils";
+import { format, addSeconds } from "date-fns";
 import { TYPES } from "../core/types";
 import { LogLevel } from "../interfaces/services/logger.interface";
 import { IPairRegisterReference, IRegister } from "../interfaces/services/register.interface";
@@ -80,10 +81,9 @@ export class RegisterController extends BaseHttpController {
                 });
                 continue;
             }
-            // CASE: "agente" have many registers
+            // CASE: "agente" has many registers
             this.logger.log(LogLevel.DEBUG, `Has many registers [${pairs.length}]`);
             let counter = 0;
-            this.logger.log(LogLevel.DEBUG, `Start checking which register is missing...`,);
             for (let index = 0; index < pairs.length; index++) {
                 const event = events[counter];
                 register = pairs[index];
@@ -144,5 +144,61 @@ export class RegisterController extends BaseHttpController {
             }
         }
         this.logger.log(LogLevel.DEBUG, `Total missed registers: [${references.length}]`, references);
+
+        // Calculate dates for "inicia" and "termina" to create and insert the missing register
+        if (references.length) {
+            for (let index = 0; index < 1; index++) {
+                const reference = references[index];
+                const { agentId, missingPair } = reference;
+                console.log('missingPair', missingPair);
+                switch (missingPair) {
+                    case 'Desconectado':
+                        const minDate = reference?.previousPair?.inicia ?? '00:00:00'; // ask for default
+                        const maxDate = reference?.currentPair?.inicia;
+                        const tail = maxDate ? ` AND "${maxDate}"` : '';
+                        const query  = `SELECT * FROM datos1 WHERE agente="${agentId}" AND inicia >= "${minDate}"${tail}`;
+                        const registers = await this.registerService.getDbQuery(query) as IRegister[];
+                        let pairToInsert = {} as IRegister;
+                        if (registers.length > 2) {
+                            const penultimateLog = registers[registers.length - 2];
+                            if (penultimateLog.evento === 'loguear') {
+                                // restar un seg del penultimo inicia para el terminar
+                                // sumar un seg del antepenultimo termina para el inicio
+                            }
+                        } else {
+                            // It means that the "agente" only has one pair
+                            // create missing register
+                            this.logger.log(LogLevel.DEBUG, `datetime : ${reference.previousPair.fecha} ${minDate}`);
+                            const sum: Date = addSeconds(new Date(`${reference.previousPair.fecha} ${minDate}`), 1);
+                            this.logger.log(LogLevel.DEBUG, `sum date: ${sum}`);
+                            const startDate = format(sum, 'HH:mm:ss');
+                            this.logger.log(LogLevel.DEBUG, `start date: ${startDate}`);
+                            pairToInsert = {
+                                ...reference.previousPair,
+                                idEvento: 300,
+                                evento: missingPair,
+                                inicia: startDate
+                            }
+                            delete pairToInsert.idRegistro;
+                            console.log(`snew`, pairToInsert);
+                            const nr = await this.registerService.getDbQuery('CREATE ')
+                            break;
+                        }
+                        
+                        break;
+                
+                    // default:
+                    //     let minDate2 = reference?.previousPair?.inicia ?? '00:00:00';
+                    //     let maxDate2 = reference.currentPair.inicia;
+                    //     let query2  =  `SELECT * FROM register WHERE agente="${agentId}" AND inicia BETWEEN "${minDate2}" AND "${maxDate2}"`;
+                        
+                    //     // const registers2 = await this.registerService.getDbQuery(query2);
+                    //     break;
+                }
+                
+            }
+        } else {
+            this.logger.log(LogLevel.DEBUG, `Theres not missed logs`);
+        }
     }
 }

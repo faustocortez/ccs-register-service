@@ -2,6 +2,7 @@ import { RowDataPacket } from "mysql2";
 
 export interface IRegisterService {
     getPairsOrderedByAgent(): Promise<RowDataPacket[]>;
+    getDbQuery(query: string, preparedValues: unknown[]): Promise<RowDataPacket[]>;
 }
 
 /** { idRegistro }
