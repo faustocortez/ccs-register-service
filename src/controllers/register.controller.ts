@@ -83,7 +83,7 @@ export class RegisterController extends BaseHttpController {
                                 this.logger.log(LogLevel.DEBUG, `Creating ${events[1]}...`);
                                 
                                 let { inicia, fecha } = register;
-                                const startTime: string = format(addSeconds(new Date(`${fecha} ${inicia}`), 1), 'HH:mm:ss');;
+                                const startTime: string = format(addSeconds(new Date(`${fecha} ${inicia}`), 1), 'HH:mm:ss');
                                 const inserted = await this.registerService.insertMissingRegister(register, events[1], startTime);
                                 continue;
                             }
@@ -97,7 +97,7 @@ export class RegisterController extends BaseHttpController {
                             let startTime: string = format(subSeconds(new Date(`${register.fecha} ${register.inicia}`), 1), 'HH:mm:ss');
                             if (pairs.length > 1 && index !== 0) {
                                 let { inicia } = pairs[index-1];
-                                let query = `SELECT * FROM datos1 WHERE (inicia BETWEEN "${inicia}" AND "${register.inicia}") AND agente="${agente}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
+                                let query = `SELECT * FROM datos WHERE (inicia BETWEEN "${inicia}" AND "${register.inicia}") AND agente="${agente}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
                                 const result = await this.registerService.getDbQuery(query) as IRegister[];
                                 startTime = result[0].inicia;
                                 if (result[0].evento === 'loguear') {
@@ -120,7 +120,7 @@ export class RegisterController extends BaseHttpController {
                             this.logger.log(LogLevel.DEBUG, `Creating ${event}...`);
 
                             let { inicia, fecha } = register;
-                            let query = `SELECT * FROM datos1 WHERE agente="${agente}" AND idEvento NOT IN (4,300) AND inicia < "${inicia}" ORDER BY inicia ASC;`;
+                            let query = `SELECT * FROM datos WHERE agente="${agente}" AND idEvento NOT IN (4,300) AND inicia < "${inicia}" ORDER BY inicia ASC;`;
                             const result = await this.registerService.getDbQuery(query) as IRegister[];
                             let startTime: string;
                             if (result.length > 1) {

@@ -49,9 +49,8 @@ class RegisterService implements IRegisterService {
             inicia: startTime
         };
         const values = Object.values(missingRegister).map(v => `"${v}"`);
-        const query = `INSERT INTO datos1 (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
+        const query = `INSERT INTO datos (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
         this.logger.log(LogLevel.DEBUG, `$query: ${query}\n`);
-        return;
         const result = await this.database.query(query) as unknown as ResultSetHeader;
 
         return result;
