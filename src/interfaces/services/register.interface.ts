@@ -1,7 +1,7 @@
 import { RowDataPacket } from "mysql2";
 
 export interface IRegisterService {
-    getPairsOrderedByAgent(): Promise<RowDataPacket[]>;
+    getAllEventPairsOrderedByAgent(table: string): Promise<IRegister[] | []>;
     getDbQuery(query: string, preparedValues: unknown[]): Promise<RowDataPacket[]>;
 }
 

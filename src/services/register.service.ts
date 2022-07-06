@@ -14,21 +14,21 @@ class RegisterService implements IRegisterService {
         @inject(TYPES.Logger) private logger: ILogger
     ) {}
     
-    public async getPairsOrderedByAgent(): Promise<RowDataPacket[]> {
-        // Pairs are those registers that have either "Conectado"
-        // or "Desconectado" value in "evento" property.
-        this.logger.log(LogLevel.DEBUG, 'Getting pairs in MySQL DB');
-        const result = await this.database.query('SELECT * FROM datos1 WHERE idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;');
-        const response = result[0] as RowDataPacket[];
-        // Excluding registers with "agente" = 0
-        let registers: RowDataPacket[] = [];
-        for (let i = 0; i < response.length; i++) {
-            const { agente } = response[i];
-            if (agente != '0') registers.push(response[i]);
+    public async getAllEventPairsOrderedByAgent(table: string): Promise<IRegister[] | []> {
+        // Pairs are those registers that have either "Conectado" or "Desconectado" value in "evento" property.
+        this.logger.log(LogLevel.DEBUG, `Getting registers from ${table} in database...`);
+        try {
+            const result = await this.database.query(`SELECT * FROM ${table} WHERE idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;`);
+            const response = result[0] as RowDataPacket[];
+            // Excluding registers with "agente" = 0
+            this.logger.log(LogLevel.DEBUG, `Query pairs result [${response.length}]`);
+            const registers: IRegister[] = this.filterInvalidAgentsRegisters(response);
+            
+            return registers;
+        } catch (error) {
+            this.logger.log(LogLevel.ERROR, error.message, error);
+            throw new Error(`Error: ${error.message}`);
         }
-        this.logger.log(LogLevel.DEBUG, `Query pairs result [${registers.length}]:`);
-        
-        return registers;
     }
 
     public async getDbQuery(query: string, preparedValues?: unknown[]): Promise<RowDataPacket[]> {
@@ -54,6 +54,18 @@ class RegisterService implements IRegisterService {
         const result = await this.database.query(query) as unknown as ResultSetHeader;
 
         return result;
+    }
+
+    private filterInvalidAgentsRegisters(rowData: RowDataPacket[]): IRegister[] {
+        let registers: IRegister[] = [];
+        if (rowData.length) {
+            for (let i = 0; i < rowData.length; i++) {
+                const { agente } = rowData[i];
+                if (agente != '0') registers.push(rowData[i] as IRegister);
+            }
+        }
+        this.logger.log(LogLevel.DEBUG, `Filtered registers [${registers.length}]`);
+        return registers;
     }
 }
 

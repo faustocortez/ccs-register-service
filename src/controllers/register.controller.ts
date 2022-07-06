@@ -7,7 +7,7 @@ import { IPairRegisterReference, IRegister } from "../interfaces/services/regist
 import Logger from "../services/logger.service";
 import RegisterService from "../services/register.service";
 
-@controller("/service/v1/register")
+@controller("/service/v1")
 export class RegisterController extends BaseHttpController {
 
     public constructor(
@@ -17,20 +17,21 @@ export class RegisterController extends BaseHttpController {
         super();
     }
 
-    @httpGet("/pairs")
-    public async addMissedPair() {
+    @httpGet("/registers")
+    public async insertMissingEventRegisters() {
         // Get registers pairs ("Conectado" y "Desconectado") order by agent
-        this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => addMissedPair()`);
-        const registers = await this.registerService.getPairsOrderedByAgent() as IRegister[];
-        if (!registers) {
+        this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => insertMissingEventRegisters()`);
+        const registers = await this.registerService.getAllEventPairsOrderedByAgent('datos');
+        if (!registers.length) {
             const message = 'Theres no registers found!'
-            this.logger.log(LogLevel.ERROR, message, registers);
+            this.logger.log(LogLevel.INFO, message, registers);
             throw new Error(message);
         }
 
         // Map agent ids ("agente") from obtained registers
-        this.logger.log(LogLevel.DEBUG, `Map agents ids from pairs registers [${registers.length}]`);
+        this.logger.log(LogLevel.DEBUG, `Map agents ids from event pairs registers [${registers.length}]`);
         let agentIds: string[] = registers.map(({ agente }) => agente);
+        this.logger.log(LogLevel.DEBUG, `Mapped agents: [${agentIds.length}]`, agentIds);
         agentIds = Array.from(new Set(agentIds));
         this.logger.log(LogLevel.DEBUG, `Mapped agents ids: [${agentIds.length}]`, agentIds);
         
