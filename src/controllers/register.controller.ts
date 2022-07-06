@@ -63,199 +63,79 @@ export class RegisterController extends BaseHttpController {
         let events = {  0: 'Conectado', 1: 'Desconectado' };
         let missingRegister: IRegister;
         for (const [agente, pairs] of Object.entries(mappedGroupPairs)) {
-            if (agente == '51') {
-                this.logger.log(LogLevel.DEBUG, `Current "agente" value: ${agente}`);
-                let register: IRegister = pairs[0];
-                let { evento } = register;
-                let missingPair: string;
-    
-                // CASE: "agente" only have one register
-                this.logger.log(LogLevel.DEBUG, `Checking if array of pairs only have 1 register`);
-                if (pairs.length === 1) {
-                    missingPair = evento === events[0] ? events[1] : events[0];
-                    this.logger.log(LogLevel.DEBUG, `Array only has one single register: ${evento}`);
-                    this.logger.log(LogLevel.DEBUG, `Missing pair: ${missingPair}\n`);
-                    // this.logger.log(LogLevel.DEBUG, `Creating missing register...`);
-    
-                    // let { inicia, fecha } = register;
-                    // console.log(format(addSeconds(new Date(`${fecha} ${inicia}`), 1), 'HH:mm:ss'));
-                    // let query = `SELECT * FROM datos1 WHERE agente="${agente}" AND idEvento NOT IN (4,300) AND inicia > "${inicia}" ORDER BY inicia ASC;`;
-                    // const result = await this.registerService.getDbQuery(query) as IRegister[];
-                    // let startTime: string;
-                    // console.log(result);
-                    // if (result.length > 1) {
-                    //     const lastLog = result[result.length - 1];
-                    //     // if idEvento = loguear
-                    //     if (lastLog.idEvento == 3) {
-                    //         // restar un seg del penultimo inicia para el terminar
-                    //         // sumar un seg del antepenultimo termina para el inicio
-    
-                    //     } else {
-                    //         console.log('else', lastLog.inicia, format(addSeconds(new Date(`${lastLog.fecha} ${lastLog.inicia}`), 1), 'HH:mm:ss'));
-                    //         missingRegister = {
-                    //             ...register,
-                    //             evento: missingPair,
-                    //             idEvento: 300,
-                    //             inicia: format(addSeconds(new Date(`${lastLog.fecha} ${lastLog.inicia}`), 1), 'HH:mm:ss')
-                    //         };
-                    //         delete missingRegister.idRegistro;
-                    //         let values = Object.values(missingRegister);
-                    //         values = values.map(v => `"${v}"`);
-                    //         console.log(values);
-                    //         query = `INSERT INTO datos1 (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
-                    //         console.log(query);
-                    //         const insert = await this.registerService.getDbQuery(query);
-                    //         console.log(insert);
-                    //     }
-                    // }
-                    // missingRegister = {
-                    //     ...register,
-                    //     evento: missingPair,
-                    //     idEvento: 300,
-                    //     inicia: format(addSeconds(new Date(`${fecha} ${inicia}`), 1), 'HH:mm:ss')
-                    // };
-                    this.logger.log(LogLevel.DEBUG, `missingRegister`, missingRegister, true);
-                    continue;
-                }
-                // CASE: "agente" has many registers
-                this.logger.log(LogLevel.DEBUG, `Has many registers [${pairs.length}]\n`);
-                let counter = 0;
-                for (let index = 0; index < pairs.length; index++) {
-                    const event = events[counter];
-                    register = pairs[index];
-                    evento = register.evento;
-                    console.log('eee', evento, event);
-    
-                    // Validate which register.evento is the missing one ("Conectado" = 0 or "Desconectado" = 1)
-                    this.logger.log(LogLevel.DEBUG, `Validating event: ${event} | Input: ${evento}`);
-                    switch (counter) {
-                        case 0:
-                            if (evento === event) {
-                                counter++;
-                                if ((pairs.length - 1) === index) {
-                                    this.logger.log(LogLevel.DEBUG, `Event "${evento}" found but its the last register, means that "${events[1]}" is missing\n`);
-                                    references.push({
-                                        agentId: agente,
-                                        missingPair: events[1],
-                                        currentPair: register,
-                                        ...(index !== 0 && { previousPair: pairs[(index - 1)] })
-                                    });
-                                    continue;
-                                }
-                                this.logger.log(LogLevel.DEBUG, `Event OK!\n`);
-                            } else {
-                                counter = 0;
-                                this.logger.log(LogLevel.ERROR, `Event should be: "${event}" but got "${evento}" instead`);
-                                this.logger.log(LogLevel.DEBUG, `Missing pair: ${event} | Array index: ${index}`);
-                                this.logger.log(LogLevel.DEBUG, `Creating ${event}...\n`);
-    
-                                let { inicia, fecha } = pairs[index-1];
+            this.logger.log(LogLevel.DEBUG, `Current "agente" value: ${agente}`);
+            let register: IRegister = pairs[0];
+            let { evento } = register;
+            let counter = 0;
+            for (let index = 0; index < pairs.length; index++) {
+                const event = events[counter];
+                register = pairs[index];
+                evento = register.evento;
+
+                // Validate which register.evento is the missing one ("Conectado" = 0 or "Desconectado" = 1)
+                this.logger.log(LogLevel.DEBUG, `Validating event: ${event} | Input: ${evento}`);
+                switch (counter) {
+                    case 0:
+                        if (evento === event) {
+                            counter++;
+                            if ((pairs.length - 1) === index) {
+                                this.logger.log(LogLevel.DEBUG, `Event "${evento}" found but its the last register, it means that "${events[1]}" is missing`);
+                                this.logger.log(LogLevel.DEBUG, `Creating ${events[1]}...`);
+                                
+                                let { inicia, fecha } = register;
+                                const startTime: string = format(addSeconds(new Date(`${fecha} ${inicia}`), 1), 'HH:mm:ss');;
+                                const inserted = await this.registerService.insertMissingRegister(register, events[1], startTime);
+                                continue;
+                            }
+                            this.logger.log(LogLevel.DEBUG, `Event OK!\n`);
+                        } else {
+                            counter = 0;
+                            this.logger.log(LogLevel.ERROR, `Event should be: "${event}" but got "${evento}" instead`);
+                            this.logger.log(LogLevel.DEBUG, `Missing pair: ${event} | Array index: ${index}`);
+                            this.logger.log(LogLevel.DEBUG, `Creating ${event}...`);
+                            
+                            let startTime: string = format(subSeconds(new Date(`${register.fecha} ${register.inicia}`), 1), 'HH:mm:ss');
+                            if (pairs.length > 1 && index !== 0) {
+                                let { inicia } = pairs[index-1];
                                 let query = `SELECT * FROM datos1 WHERE (inicia BETWEEN "${inicia}" AND "${register.inicia}") AND agente="${agente}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
                                 const result = await this.registerService.getDbQuery(query) as IRegister[];
-                                let startTime: string;
+                                startTime = result[0].inicia;
                                 if (result[0].evento === 'loguear') {
+                                    // TODO: Avaces al sumarle 1 seg no queda justo despues de "loguear", usar mismo time???
                                     startTime = format(addSeconds(new Date(`${result[0].fecha} ${result[0].inicia}`), 1), 'HH:mm:ss');
                                 } else {
                                     // insertart "loguear" y "Conectado"
                                     console.log('no tiene loguear ');
                                 }
-                                missingRegister = {
-                                    ...register,
-                                    evento: event,
-                                    idEvento: 4,
-                                    inicia: startTime
-                                };
-                                delete missingRegister.idRegistro;
-                                let values = Object.values(missingRegister);
-                                values = values.map(v => `"${v}"`);
-                                console.log(values);
-                                query = `INSERT INTO datos1 (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
-                                console.log(query);
-                                // if (result.length > 1) {
-                                //     const lastLog = result[result.length - 1];
-                                //     // if idEvento = loguear
-                                //     if (lastLog.idEvento == 3) {
-                                //         // restar un seg del penultimo inicia para el terminar
-                                //         // sumar un seg del antepenultimo termina para el inicio
-                
-                                //     } else {
-                                //         console.log('else', lastLog.inicia, format(addSeconds(new Date(`${lastLog.fecha} ${lastLog.inicia}`), 1), 'HH:mm:ss'));
-                                //         missingRegister = {
-                                //             ...register,
-                                //             evento: missingPair,
-                                //             idEvento: 300,
-                                //             inicia: format(addSeconds(new Date(`${lastLog.fecha} ${lastLog.inicia}`), 1), 'HH:mm:ss')
-                                //         };
-                                //         delete missingRegister.idRegistro;
-                                //         let values = Object.values(missingRegister);
-                                //         values = values.map(v => `"${v}"`);
-                                //         console.log(values);
-                                //         query = `INSERT INTO datos1 (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
-                                //         console.log(query);
-                                //         // const insert = await this.registerService.getDbQuery(query);
-                                //     }
-                                // }
                             }
-                            break;
-                        case 1:
-                            counter = evento === events[0] ? counter : 0;
-                            if (evento !== event) {
-                                this.logger.log(LogLevel.ERROR, `Event should be: "${event}" but got "${evento}" instead`);
-                                this.logger.log(LogLevel.DEBUG, `Missing pair: ${event} index ${index}`);
-                                this.logger.log(LogLevel.DEBUG, `Creating ${event}...\n`);
-    
-                                let { inicia, fecha } = register;
-                                // console.log(format(subSeconds(new Date(`${fecha} ${inicia}`), 1), 'HH:mm:ss'));
-                                let query = `SELECT * FROM datos1 WHERE agente="${agente}" AND idEvento NOT IN (4,300) AND inicia < "${inicia}" ORDER BY inicia ASC;`;
-                                const result = await this.registerService.getDbQuery(query) as IRegister[];
-                                let startTime: string;
-                                if (result.length > 1) {
-                                    const referenceLog = result[result.length - 1];;
-                                    // if ((pairs.length - 1) === index) {
-                                    //     referenceLog = result[result.length - 1];
-                                    // } else {
-                                    //     referenceLog = pairs[index + 1];
-                                    // }
-                                    console.log(referenceLog);
-                                    // if idEvento = loguear
-                                    if (referenceLog.idEvento == 3) {
-                                        startTime = format(subSeconds(new Date(`${referenceLog.fecha} ${referenceLog.inicia}`), 1), 'HH:mm:ss');
-                                        missingRegister = {
-                                            ...register,
-                                            evento: event,
-                                            idEvento: 300,
-                                            inicia: startTime
-                                        };
-                                        delete missingRegister.idRegistro;
-                                        let values = Object.values(missingRegister);
-                                        values = values.map(v => `"${v}"`);
-                                        query = `INSERT INTO datos1 (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
-                                        console.log(query);
-                                    } else {
-                                        console.log('else', referenceLog.inicia, format(addSeconds(new Date(`${referenceLog.fecha} ${referenceLog.inicia}`), 1), 'HH:mm:ss'));
-                                        startTime = format(addSeconds(new Date(`${referenceLog.fecha} ${referenceLog.inicia}`), 1), 'HH:mm:ss');
-                                        missingRegister = {
-                                            ...register,
-                                            evento: missingPair,
-                                            idEvento: 300,
-                                            inicia: startTime
-                                        };
-                                        delete missingRegister.idRegistro;
-                                        let values = Object.values(missingRegister);
-                                        values = values.map(v => `"${v}"`);
-                                        query = `INSERT INTO datos1 (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
-                                        console.log(query);
-                                        // const insert = await this.registerService.getDbQuery(query);
-                                    }
-                                }
-                                continue;
+                                
+                            const inserted = await this.registerService.insertMissingRegister(register, event, startTime);
+                        }
+                        break;
+                    case 1:
+                        counter = evento === events[0] ? counter : 0;
+                        if (evento !== event) {
+                            this.logger.log(LogLevel.ERROR, `Event should be: "${event}" but got "${evento}" instead`);
+                            this.logger.log(LogLevel.DEBUG, `Missing pair: ${event} index ${index}`);
+                            this.logger.log(LogLevel.DEBUG, `Creating ${event}...`);
+
+                            let { inicia, fecha } = register;
+                            let query = `SELECT * FROM datos1 WHERE agente="${agente}" AND idEvento NOT IN (4,300) AND inicia < "${inicia}" ORDER BY inicia ASC;`;
+                            const result = await this.registerService.getDbQuery(query) as IRegister[];
+                            let startTime: string;
+                            if (result.length > 1) {
+                                const referenceLog = result[result.length - 1];
+                                startTime = (referenceLog.idEvento == 3)
+                                        ? format(subSeconds(new Date(`${referenceLog.fecha} ${referenceLog.inicia}`), 1), 'HH:mm:ss')
+                                        : format(addSeconds(new Date(`${referenceLog.fecha} ${referenceLog.inicia}`), 1), 'HH:mm:ss');
+                                const inserted = await this.registerService.insertMissingRegister(register, event, startTime);
                             }
-                            this.logger.log(LogLevel.DEBUG, `Event OK!\n`);
-                            break;
-                    }
-                }   
+                            continue;
+                        }
+                        this.logger.log(LogLevel.DEBUG, `Event OK!\n`);
+                        break;
+                }
             }
         }
-        this.logger.log(LogLevel.DEBUG, `Total missed registers: [${references.length}]\n`);
     }
 }
