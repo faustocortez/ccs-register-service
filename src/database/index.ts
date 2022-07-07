@@ -14,10 +14,10 @@ class Database {
     public constructor(@inject(TYPES.Logger) private logger: Logger) {}
 
     public async getConnection(): Promise<Pool> {
-        this.logger.log(LogLevel.DEBUG, `Getting DataSource connection...`);
+        this.logger.log(LogLevel.DEBUG, `Connecting to database...`);
 
         if (Database.connection instanceof Database) {
-            this.logger.log(LogLevel.DEBUG, `DB already connected`);
+            this.logger.log(LogLevel.DEBUG, `Database already connected`);
             return Database.connection
         }
         

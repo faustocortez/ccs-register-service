@@ -24,17 +24,19 @@ class RegisterService implements IRegisterService {
     ) {}
     
     public async insertMissingRegisters(table: string, date: string): Promise<IMissingRegister[] | []> {
-        this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => insertMissingRegisters()`);
+        this.logger.log(LogLevel.INFO, `### STARTING PROCESS TO ADD MISSING REGISTERS ###`);
         try {
+            this.logger.log(LogLevel.DEBUG, `Input for the process: table => "${table}" & date => "${date}"\n`);
             // "Pairs" are those registers that have either "Conectado" or "Desconectado" value in "evento" property.
             this.table = table;
             this.date = date;
-            this.logger.log(LogLevel.INFO, `Getting registers from ${this.table} in database...`);
             const registers = await this.getAllEventPairsOrderedByAgent() as IRegister[];
             let mappedGroupPairs: { [key: string]: IRegister[] } = {};
             let registersByAgent: IRegister[] = [];
             let currentAgentId: string = RegisterService.getFirstValidAgentId(registers);
-
+            
+            this.logger.log(LogLevel.INFO, `### MAP EXISTING PAIRS REGISTERS BY "agente" ###`);
+            this.logger.log(LogLevel.INFO, `### CURRENT VALUE OF "agente" ${currentAgentId} ###`);
             if (registers.length) {
                 for (let index = 0; index < registers.length; index++) {
                     const register: IRegister = registers[index];
@@ -42,32 +44,30 @@ class RegisterService implements IRegisterService {
 
                     if (agente != '0') {
                         // Group pairs in arrays by agent id
-                        this.logger.log(LogLevel.INFO, `Grouping pairs registers by agent id ${currentAgentId} | Grouped: [${registersByAgent.length}]`);
+                        this.logger.log(LogLevel.DEBUG, `Adding pairs ("Conectado" | "Desconectado") registers to array of "agente" ${currentAgentId} | Current array's length: [${registersByAgent.length}]`);
                         if (currentAgentId === agente) {
                             registersByAgent.push(register);
                             if (index === (registers.length - 1)) {
-                                this.logger.log(LogLevel.DEBUG, `Adding last array of registers: [${registersByAgent.length}]`);
+                                this.logger.log(LogLevel.DEBUG, `Adding last array of registers: [${registersByAgent.length}]\n`);
                                 mappedGroupPairs[agente] = [...registersByAgent];
                             }
                         } else {
-                            this.logger.log(LogLevel.DEBUG, `Total registers for agent ${currentAgentId} = [${registersByAgent.length}]`);
+                            this.logger.log(LogLevel.INFO, `### TOTAL REGISTERS OF "agente" ${currentAgentId} = [${registersByAgent.length}] ###\n`);
                             mappedGroupPairs[currentAgentId] = [...registersByAgent];
                             currentAgentId = agente;
-                            this.logger.log(LogLevel.INFO, `Updated currentAgentId: ${currentAgentId}`);
+                            this.logger.log(LogLevel.INFO, `### CURRENT VALUE OF "agente" ${currentAgentId} ###`);
                             registersByAgent = [register]; // first register of updated currentId
                             if (index === (registers.length -1)) mappedGroupPairs[currentAgentId] = [...registersByAgent];
                         }
-                    } else {
-                        this.logger.log(LogLevel.ERROR, `Invalid agent id: ${agente}`);
                     }
                 }
-                this.logger.log(LogLevel.INFO, `Grouped pairs logs => `, mappedGroupPairs);
+                // this.logger.log(LogLevel.INFO, `Grouped pairs logs => `, mappedGroupPairs);
 
                 // Searching pair log is missing
-                this.logger.log(LogLevel.INFO, `Searching missing registers...`);
+                this.logger.log(LogLevel.INFO, `### FIND MISSING PAIRS OF "Conectado" AND "Desconectado" REGISTERS ###`);
                 let events = {  0: 'Conectado', 1: 'Desconectado' };
                 for (const [agente, pairs] of Object.entries(mappedGroupPairs)) {
-                    this.logger.log(LogLevel.INFO, `Current "agente" value: ${agente}`);
+                    this.logger.log(LogLevel.INFO, `### ITERATION OVER "Conectado" AND "Desconectado" REGISTERS OF "agente" ${agente} ###`);
                     // Initializing aux variables
                     let register: IRegister = pairs[0];
                     let { evento } = register;
@@ -78,42 +78,34 @@ class RegisterService implements IRegisterService {
                         evento = register.evento;
 
                         // Validate which register.evento is the missing one ("Conectado" = 0 or "Desconectado" = 1)
-                        this.logger.log(LogLevel.DEBUG, `Validating event: "${event}" | Input: ${evento}`);
+                        this.logger.log(LogLevel.DEBUG, `Value of the "registro.evento" that the "agente" ${agente} should have: "${event}"`);
+                        this.logger.log(LogLevel.DEBUG, `Value that he has: "${evento}" | "idRegistro" of register: ${register.idRegistro}`);
                         switch (counter) {
                             case 0: // "Conectado"
                                 if (event === evento) {
                                     counter++;
                                     // If current register.evento is "Conectado" and is the last one, add missing "Desconectado"
                                     if ((pairs.length - 1) === index) {
-                                        this.logger.log(LogLevel.DEBUG, `Event "${evento}" found but its the last register, it means that "${events[1]}" is missing`);
-                                        this.logger.log(LogLevel.DEBUG, `Creating "${events[1]}"...`);
-                                        
+                                        this.logger.log(LogLevel.DEBUG, `The "registro.evento" "${evento}" is correct, but its the last register, so it means that "${events[1]}" is missing\n`);
+                                        this.logger.log(LogLevel.INFO, `### PREPARING AND  COMPUTING DATA FOR THE MISSING REGISTER "${events[1]}" ###`);
                                         const date = `${register.fecha} ${register.inicia}`;
                                         const startTime: string = this.computeDateSeconds(date, 1);
                                         await this.insertMissingRegister(register, events[1], startTime);
                                         continue;
                                     }
-                                    this.logger.log(LogLevel.DEBUG, `Event OK!\n`);
+                                    this.logger.log(LogLevel.DEBUG, `This "registro.evento" is correct! Checking next one...\n`);
                                 } else {
                                     // Preparing data to insert missing "Desconectado"
                                     counter = 0;
-                                    this.logger.log(LogLevel.ERROR, `Event should be: "${event}" but got "${evento}" instead`);
-                                    this.logger.log(LogLevel.DEBUG, `Missing pair: "${event}"`);
-                                    this.logger.log(LogLevel.DEBUG, `Creating "${event}"...`);
+                                    this.logger.log(LogLevel.DEBUG, `The "registro.evento" "${evento}" is correct, but its the last register, so it means that "${events[1]}" is missing\n`);
+                                    this.logger.log(LogLevel.DEBUG, `### PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
                                     let date = `${register.fecha} ${register.inicia}`;
                                     let startTime: string = this.computeDateSeconds(date, 1, 'SUB');
                                     if (pairs.length > 1 && index !== 0) {
                                         let { inicia } = pairs[index-1];
                                         const result = await this.getRegistersBetweenStartTimes(inicia, register.inicia, agente);
-                                        startTime = result[0].inicia;
-                                        if (result[0].evento === 'loguear') {
-                                            // TODO: Avaces al sumarle 1 seg no queda justo despues de "loguear", usar mismo time???
-                                            date = `${result[0].fecha} ${result[0].inicia}`;
-                                            startTime = this.computeDateSeconds(date, 1);
-                                        } else {
-                                            // insertart "loguear" y "Conectado"
-                                            this.logger.log(LogLevel.ERROR, `Event "loguear" is missing...`);
-                                        }
+                                        date = `${result[0].fecha} ${result[0].inicia}`;
+                                        startTime = this.computeDateSeconds(date, 1);
                                     }
                                         
                                     await this.insertMissingRegister(register, event, startTime);
@@ -123,9 +115,8 @@ class RegisterService implements IRegisterService {
                                 counter = evento === events[0] ? counter : 0;
                                 if (evento !== event) {
                                     // Preparing data to insert missing "Conectado"
-                                    this.logger.log(LogLevel.ERROR, `Event should be: "${event}" but got "${evento}" instead`);
-                                    this.logger.log(LogLevel.DEBUG, `Missing pair: "${event}" index ${index}`);
-                                    this.logger.log(LogLevel.DEBUG, `Creating "${event}"...`);
+                                    this.logger.log(LogLevel.DEBUG, `The "registro.evento" "${evento}" is correct, but its the last register, so it means that "${events[1]}" is missing\n`);
+                                    this.logger.log(LogLevel.DEBUG, `### PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
 
                                     const result = await this.getRegistersFromStartTime(register.inicia, agente);
                                     let startTime: string;
@@ -140,7 +131,7 @@ class RegisterService implements IRegisterService {
                                     }
                                     continue;
                                 }
-                                this.logger.log(LogLevel.DEBUG, `Event OK!\n`);
+                                this.logger.log(LogLevel.DEBUG, `This "registro.evento" is correct! Checking next one...\n`);
                                 break;
                         }
                     }
@@ -154,7 +145,7 @@ class RegisterService implements IRegisterService {
     }
     
     private async insertMissingRegister(reference: IRegister, missingPair: string, startTime: string): Promise<void> {
-        this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => insertMissingRegister()`);
+        this.logger.log(LogLevel.INFO, `### INSERTING PREPARED MISSING REGISTER ###`);
         const { idRegistro, ...data } = reference;
         const missingRegister = {
             ...data,
@@ -163,13 +154,14 @@ class RegisterService implements IRegisterService {
             inicia: startTime
         };
         const values = Object.values(missingRegister).map(v => `"${v}"`);
-        this.query = `INSERT INTO datos (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
-        this.logger.log(LogLevel.DEBUG, `$query: ${this.query}\n`);
+        this.query = `INSERT INTO ${this.table} (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
+        this.logger.log(LogLevel.DEBUG, `Query => ${this.query}`);
+        this.logger.log(LogLevel.DEBUG, `Register "${missingPair}" to insert =>`, missingRegister);
         const result = await this.database.query(this.query) as unknown as ResultSetHeader;
-        this.logger.log(LogLevel.DEBUG, `Query insertMissingRegister result:`, result);
+        this.logger.log(LogLevel.DEBUG, `Query result:`, result);
 
-        if (result.affectedRows > 0) {
-            this.logger.log(LogLevel.INFO, `Register inserted successfully. Id: ${result.insertId}`);
+        if (result.affectedRows > 0 && result.insertId > 0) {
+            this.logger.log(LogLevel.INFO, `Register inserted successfully. Id: ${result.insertId}\n`);
             this.missingRegisters.push({
                 id: `${result.insertId}`,
                 agentId: data.agente,
@@ -180,34 +172,34 @@ class RegisterService implements IRegisterService {
     }
 
     private async getAllEventPairsOrderedByAgent(): Promise<RowDataPacket[]> {
-        this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => getAllEventPairsOrderedByAgent()`);
+        this.logger.log(LogLevel.INFO, `### GETTING ALL PAIRS OF REGISTERS "Conectado AND "Desconectado" ORDERED BY "agente" AND "inicia" ###`);
         this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;`
-        this.logger.log(LogLevel.DEBUG, `Getting all event pairs ("Conectado and "Desconectado") ordered by "agente"`);
+        this.logger.log(LogLevel.DEBUG, `Query to execute => "${this.query}"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
-        this.logger.log(LogLevel.DEBUG, `Query getAllEventPairsOrderedByAgent result [${response.length}]`);
+        this.logger.log(LogLevel.DEBUG, `Query result: total registers found => [${response.length}]\n`);
         
         return response;
     }
 
     private async getRegistersBetweenStartTimes(startTime: string, endTime: string, agentId: string): Promise<IRegister[] | []> {
-        this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => getRegistersBetweenStartTimes()`);
+        this.logger.log(LogLevel.INFO, `### GETTING REGISTERS FROM "agente" ${agentId} DISTINCT THAN "Conectado" AND "Desconectado" BETWEEN "${startTime}" & "${endTime}" ###`);
         this.query = `SELECT * FROM ${this.table} WHERE (inicia BETWEEN "${startTime}" AND "${endTime}") AND fecha="${this.date}" AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
-        this.logger.log(LogLevel.DEBUG, `Getting events registers from "agente" ${agentId} distinct than "Conectado" and "Desconectado" between "${startTime}" & "${endTime}"`);
+        this.logger.log(LogLevel.DEBUG, `Query to execute => "${this.query}"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
-        this.logger.log(LogLevel.DEBUG, `Query getRegistersBetweenStartTimes result [${response.length}]`);
+        this.logger.log(LogLevel.DEBUG, `Query result: total registers found => [${response.length}]\n`);
         if (response.length) return response as IRegister[];
         return [];
     }
 
     private async getRegistersFromStartTime(startTime: string, agentId: string): Promise<IRegister[] | []> {
-        this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => getRegistersFromStartTime()`);
+        this.logger.log(LogLevel.INFO, `### GETTING REGISTERS FROM "agente" ${agentId} DISTINCT THAN "Conectado" AND "Desconectado" AND "inicia" < "${startTime}" ###`);
         this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND inicia < "${startTime}" AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
-        this.logger.log(LogLevel.DEBUG, `Getting events registers from "agente" ${agentId} distinct than "Conectado" and "Desconectado" where "inicia" < "${startTime}"`,);
+        this.logger.log(LogLevel.DEBUG, `Query to execute => ${this.query}"`,);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
-        this.logger.log(LogLevel.DEBUG, `Query getRegistersFromStartTime result [${response.length}]`);
+        this.logger.log(LogLevel.DEBUG, `Query result: total registers found [${response.length}]\n`);
         if (response.length) return response as IRegister[];
         return [];
     }
