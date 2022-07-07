@@ -61,7 +61,7 @@ class RegisterService implements IRegisterService {
                         }
                     }
                 }
-                // this.logger.log(LogLevel.INFO, `Grouped pairs logs => `, mappedGroupPairs);
+                this.logger.log(LogLevel.INFO, `Grouped pairs logs => `, mappedGroupPairs);
 
                 // Searching pair log is missing
                 this.logger.log(LogLevel.INFO, `### FIND MISSING PAIRS OF "Conectado" AND "Desconectado" REGISTERS ###`);
