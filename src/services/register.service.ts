@@ -12,6 +12,8 @@ class RegisterService implements IRegisterService {
 
     private query: string;
 
+    private table: string;
+
     public constructor(
         @inject(TYPES.Database) private readonly database: Database,
         @inject(TYPES.Logger) private logger: ILogger
@@ -21,8 +23,9 @@ class RegisterService implements IRegisterService {
         this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => insertMissingRegisters()`);
         try {
             // "Pairs" are those registers that have either "Conectado" or "Desconectado" value in "evento" property.
-            this.logger.log(LogLevel.INFO, `Getting registers from ${table} in database...`);
-            const registers = await this.getAllEventPairsOrderedByAgent(table) as IRegister[];
+            this.table = table;
+            this.logger.log(LogLevel.INFO, `Getting registers from ${this.table} in database...`);
+            const registers = await this.getAllEventPairsOrderedByAgent() as IRegister[];
             let mappedGroupPairs: { [key: string]: IRegister[] } = {};
             let registersByAgent: IRegister[] = [];
             let currentAgentId: string = RegisterService.getFirstValidAgentId(registers);
@@ -96,7 +99,7 @@ class RegisterService implements IRegisterService {
                                     let startTime: string = this.computeDateSeconds(date, 1, 'SUB');
                                     if (pairs.length > 1 && index !== 0) {
                                         let { inicia } = pairs[index-1];
-                                        const result = await this.getRegistersBetweenStartTimes(table, inicia, register.inicia, agente);
+                                        const result = await this.getRegistersBetweenStartTimes(inicia, register.inicia, agente);
                                         startTime = result[0].inicia;
                                         if (result[0].evento === 'loguear') {
                                             // TODO: Avaces al sumarle 1 seg no queda justo despues de "loguear", usar mismo time???
@@ -119,7 +122,7 @@ class RegisterService implements IRegisterService {
                                     this.logger.log(LogLevel.DEBUG, `Missing pair: "${event}" index ${index}`);
                                     this.logger.log(LogLevel.DEBUG, `Creating "${event}"...`);
 
-                                    const result = await this.getRegistersFromStartTime(table, register.inicia, agente);
+                                    const result = await this.getRegistersFromStartTime(register.inicia, agente);
                                     let startTime: string;
                                     if (result.length > 1) {
                                         const referenceLog = result[result.length - 1];
@@ -164,9 +167,9 @@ class RegisterService implements IRegisterService {
         else this.logger.log(LogLevel.ERROR, `Can't insert missing register ${missingPair}`, { ...missingRegister });
     }
 
-    private async getAllEventPairsOrderedByAgent(table: string): Promise<RowDataPacket[]> {
+    private async getAllEventPairsOrderedByAgent(): Promise<RowDataPacket[]> {
         this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => getAllEventPairsOrderedByAgent()`);
-        this.query = `SELECT * FROM ${table} WHERE idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;`
+        this.query = `SELECT * FROM ${this.table} WHERE idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;`
         this.logger.log(LogLevel.DEBUG, `Getting all event pairs ("Conectado and "Desconectado") ordered by "agente"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
@@ -175,9 +178,9 @@ class RegisterService implements IRegisterService {
         return response;
     }
 
-    private async getRegistersBetweenStartTimes(table, startTime: string, endTime: string, agentId: string): Promise<IRegister[] | []> {
+    private async getRegistersBetweenStartTimes(startTime: string, endTime: string, agentId: string): Promise<IRegister[] | []> {
         this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => getRegistersBetweenStartTimes()`);
-        this.query = `SELECT * FROM ${table} WHERE (inicia BETWEEN "${startTime}" AND "${endTime}") AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
+        this.query = `SELECT * FROM ${this.table} WHERE (inicia BETWEEN "${startTime}" AND "${endTime}") AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
         this.logger.log(LogLevel.DEBUG, `Getting events registers from "agente" ${agentId} distinct than "Conectado" and "Desconectado" between "${startTime}" & "${endTime}"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
@@ -186,9 +189,9 @@ class RegisterService implements IRegisterService {
         return [];
     }
 
-    private async getRegistersFromStartTime(table, startTime: string, agentId: string): Promise<IRegister[] | []> {
-        this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => getRegistersFromStartTime()`, { table, startTime, agentId });
-        this.query = `SELECT * FROM ${table} WHERE inicia < "${startTime}" AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
+    private async getRegistersFromStartTime(startTime: string, agentId: string): Promise<IRegister[] | []> {
+        this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => getRegistersFromStartTime()`);
+        this.query = `SELECT * FROM ${this.table} WHERE inicia < "${startTime}" AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
         this.logger.log(LogLevel.DEBUG, `Getting events registers from "agente" ${agentId} distinct than "Conectado" and "Desconectado" where "inicia" < "${startTime}"`,);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
