@@ -1,8 +1,5 @@
-import { RowDataPacket } from "mysql2";
-
 export interface IRegisterService {
-    getAllEventPairsOrderedByAgent(table: string): Promise<IRegister[] | []>;
-    getDbQuery(query: string, preparedValues: unknown[]): Promise<RowDataPacket[]>;
+    insertMissingRegisters(table: string): Promise<void>;
 }
 
 /** { idRegistro }
@@ -31,11 +28,4 @@ export interface IRegister {
     identificador: string;
     idCliente: string;
     fechaIng: Date; // '0000-00-00'
-}
-
-export interface IPairRegisterReference {
-    agentId: string; // agente
-    missingPair: string; // missing pair (most likely "Desconectado")
-    previousPair?: IRegister; // existing previous pair
-   currentPair?: IRegister; // existing current pair
 }

@@ -7,7 +7,7 @@ class Logger implements ILogger{
     public log(
       level: LogLevel,
       message: string,
-      data?: Object,
+      data?: Array<unknown> | Object | any,
       pretty?: boolean
     ): void {
       const time = new Date().toISOString();

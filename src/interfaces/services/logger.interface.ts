@@ -1,5 +1,5 @@
 export interface ILogger {
-    log(level: LogLevel, message: string, data?: Array<unknown> | Record<string, unknown>, pretty?: boolean): void;
+    log(level: LogLevel, message: string, data?: Array<unknown> | Object | any, pretty?: boolean): void;
 }
 
 export enum LogLevel {
