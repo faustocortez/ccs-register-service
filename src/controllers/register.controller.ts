@@ -15,6 +15,8 @@ export class RegisterController extends BaseHttpController implements IRegisterC
 
     private table: string = process.env.DB_TABLE_NAME;
 
+    private database: string = process.env.DB_NAME;
+
     public constructor(
         @inject(TYPES.RegisterService) private registerService: RegisterService,
         @inject(TYPES.Logger) private logger: Logger
@@ -29,7 +31,7 @@ export class RegisterController extends BaseHttpController implements IRegisterC
         this.logger.log(LogLevel.INFO, `### INSERT MISSING REGISTERS SERVICE ###`);
         if (body?.date) {
             const month = format(new Date(`${body.date} 06:00:00`), 'yyyyMM');
-            const tableName = `${this.table}${month}`
+            const tableName = `${this.database}.${this.table}${month}`;
             const insertedRegisters = await this.registerService.insertMissingRegisters(tableName, body.date);
             this.logger.log(LogLevel.INFO, `Missing registers found and inserted [${insertedRegisters.length}] => `, { insertedRegisters });
             response.data = insertedRegisters;
