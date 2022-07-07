@@ -14,6 +14,8 @@ class RegisterService implements IRegisterService {
 
     private table: string;
 
+    private date: string;
+
     public constructor(
         @inject(TYPES.Database) private readonly database: Database,
         @inject(TYPES.Logger) private logger: ILogger
@@ -24,6 +26,7 @@ class RegisterService implements IRegisterService {
         try {
             // "Pairs" are those registers that have either "Conectado" or "Desconectado" value in "evento" property.
             this.table = table;
+            this.date = date;
             this.logger.log(LogLevel.INFO, `Getting registers from ${this.table} in database...`);
             const registers = await this.getAllEventPairsOrderedByAgent() as IRegister[];
             let mappedGroupPairs: { [key: string]: IRegister[] } = {};
@@ -143,7 +146,7 @@ class RegisterService implements IRegisterService {
             }
         } catch (error) {
             this.logger.log(LogLevel.ERROR, error.message, error);
-            throw new Error(`Error: ${error.message}`);
+            throw new Error(error.message);
         }
     }
     
@@ -169,7 +172,7 @@ class RegisterService implements IRegisterService {
 
     private async getAllEventPairsOrderedByAgent(): Promise<RowDataPacket[]> {
         this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => getAllEventPairsOrderedByAgent()`);
-        this.query = `SELECT * FROM ${this.table} WHERE idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;`
+        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;`
         this.logger.log(LogLevel.DEBUG, `Getting all event pairs ("Conectado and "Desconectado") ordered by "agente"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
@@ -180,7 +183,7 @@ class RegisterService implements IRegisterService {
 
     private async getRegistersBetweenStartTimes(startTime: string, endTime: string, agentId: string): Promise<IRegister[] | []> {
         this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => getRegistersBetweenStartTimes()`);
-        this.query = `SELECT * FROM ${this.table} WHERE (inicia BETWEEN "${startTime}" AND "${endTime}") AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
+        this.query = `SELECT * FROM ${this.table} WHERE (inicia BETWEEN "${startTime}" AND "${endTime}") AND fecha="${this.date}" AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
         this.logger.log(LogLevel.DEBUG, `Getting events registers from "agente" ${agentId} distinct than "Conectado" and "Desconectado" between "${startTime}" & "${endTime}"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
@@ -191,7 +194,7 @@ class RegisterService implements IRegisterService {
 
     private async getRegistersFromStartTime(startTime: string, agentId: string): Promise<IRegister[] | []> {
         this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => getRegistersFromStartTime()`);
-        this.query = `SELECT * FROM ${this.table} WHERE inicia < "${startTime}" AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
+        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND inicia < "${startTime}" AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
         this.logger.log(LogLevel.DEBUG, `Getting events registers from "agente" ${agentId} distinct than "Conectado" and "Desconectado" where "inicia" < "${startTime}"`,);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
