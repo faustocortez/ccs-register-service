@@ -3,10 +3,10 @@ import { BaseHttpController, controller, httpPost, requestBody } from "inversify
 import format from "date-fns/format";
 import dotenv from 'dotenv';
 import { TYPES } from "../core/types";
-import { LogLevel } from "../interfaces/services/logger.interface";
+import { LogLevel } from "../interfaces/logger.interface";
 import Logger from "../services/logger.service";
 import RegisterService from "../services/register.service";
-import { IRegisterController, IRegisterControllerResponse } from "../interfaces/services/register.interface";
+import { IRegisterController, IRegisterControllerResponse } from "../interfaces/register.interface";
 
 dotenv.config();
 

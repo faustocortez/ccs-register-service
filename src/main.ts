@@ -2,7 +2,7 @@ import "reflect-metadata";
 import { server } from "./core/server";
 import { container } from "./core/container";
 import { TYPES } from "./core/types";
-import { ILogger, LogLevel } from "./interfaces/services/logger.interface";
+import { ILogger, LogLevel } from "./interfaces/logger.interface";
 import Database from "./database";
 
 const port = process.env.PORT || 3000;

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { createPool, Pool } from 'mysql2/promise';
 import { TYPES } from '../core/types';
 import Logger from '../services/logger.service';
-import { LogLevel } from '../interfaces/services/logger.interface';
+import { LogLevel } from '../interfaces/logger.interface';
 
 dotenv.config();
 @injectable()

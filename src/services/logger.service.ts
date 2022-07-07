@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { injectable } from 'inversify';
-import { ILogger, LogLevel } from '../interfaces/services/logger.interface';
+import { ILogger, LogLevel } from '../interfaces/logger.interface';
 
 @injectable()
 class Logger implements ILogger{

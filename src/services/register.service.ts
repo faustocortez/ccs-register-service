@@ -2,8 +2,8 @@ import 'reflect-metadata';
 import { inject, injectable } from 'inversify';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { addSeconds, format, subSeconds, isBefore } from 'date-fns';
-import { IRegister, IRegisterService } from '../interfaces/services/register.interface';
-import { ILogger, LogLevel } from '../interfaces/services/logger.interface';
+import { IRegister, IRegisterService } from '../interfaces/register.interface';
+import { ILogger, LogLevel } from '../interfaces/logger.interface';
 import { TYPES } from '../core/types';
 import Database from '../database';
 
