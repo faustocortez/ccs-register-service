@@ -2,7 +2,7 @@ import { JsonResult } from "inversify-express-utils/lib/results";
 
 // SERVICE
 export interface IRegisterService {
-    insertMissingRegisters(table: string, date: string): Promise<void>;
+    insertMissingRegisters(table: string, date: string): Promise<IMissingRegister[] | []>;
 }
 
 /** { idRegistro }
@@ -35,6 +35,7 @@ export interface IRegister {
 
 export interface IMissingRegister {
     id: string; // idRegistro
+    agentId: string; // "agente"
     event: string; // missing register
     startTime: string; // computed value "inicia"
 }

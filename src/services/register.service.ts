@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { inject, injectable } from 'inversify';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { addSeconds, format, subSeconds, isBefore } from 'date-fns';
-import { IRegister, IRegisterService } from '../interfaces/register.interface';
+import { IMissingRegister, IRegister, IRegisterService } from '../interfaces/register.interface';
 import { ILogger, LogLevel } from '../interfaces/logger.interface';
 import { TYPES } from '../core/types';
 import Database from '../database';
@@ -16,12 +16,14 @@ class RegisterService implements IRegisterService {
 
     private date: string;
 
+    private missingRegisters: IMissingRegister[] = [];
+
     public constructor(
         @inject(TYPES.Database) private readonly database: Database,
         @inject(TYPES.Logger) private logger: ILogger
     ) {}
     
-    public async insertMissingRegisters(table: string, date: string): Promise<void> {
+    public async insertMissingRegisters(table: string, date: string): Promise<IMissingRegister[] | []> {
         this.logger.log(LogLevel.DEBUG, `${this.constructor.name} => insertMissingRegisters()`);
         try {
             // "Pairs" are those registers that have either "Conectado" or "Desconectado" value in "evento" property.
@@ -144,6 +146,7 @@ class RegisterService implements IRegisterService {
                     }
                 }
             }
+            return this.missingRegisters;
         } catch (error) {
             this.logger.log(LogLevel.ERROR, error.message, error);
             throw new Error(error.message);
@@ -162,12 +165,18 @@ class RegisterService implements IRegisterService {
         const values = Object.values(missingRegister).map(v => `"${v}"`);
         this.query = `INSERT INTO datos (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
         this.logger.log(LogLevel.DEBUG, `$query: ${this.query}\n`);
-        return;
         const result = await this.database.query(this.query) as unknown as ResultSetHeader;
         this.logger.log(LogLevel.DEBUG, `Query insertMissingRegister result:`, result);
 
-        if (result.affectedRows > 0) this.logger.log(LogLevel.INFO, `Register inserted successfully. Id: ${result.insertId}`);
-        else this.logger.log(LogLevel.ERROR, `Can't insert missing register ${missingPair}`, { ...missingRegister });
+        if (result.affectedRows > 0) {
+            this.logger.log(LogLevel.INFO, `Register inserted successfully. Id: ${result.insertId}`);
+            this.missingRegisters.push({
+                id: `${result.insertId}`,
+                agentId: data.agente,
+                event: missingPair,
+                startTime
+            })
+        } else this.logger.log(LogLevel.ERROR, `Can't insert missing register ${missingPair}`, { ...missingRegister });
     }
 
     private async getAllEventPairsOrderedByAgent(): Promise<RowDataPacket[]> {

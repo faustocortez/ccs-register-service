@@ -24,17 +24,22 @@ export class RegisterController extends BaseHttpController implements IRegisterC
 
     @httpPost("/registers")
     public async insertMissingEventRegisters(@requestBody() body: { date: string}) {
-        let response: IRegisterControllerResponse;
+        const response: IRegisterControllerResponse = { data: [], message: '' };
+        let statusCode: number = 200;
         this.logger.log(LogLevel.DEBUG, `Executing ${this.constructor.name} => insertMissingEventRegisters()`);
         if (body?.date) {
             const month = format(new Date(`${body.date} 00:00:00`), 'yyyyMM');
             const tableName = `${this.table}${month}`
-            this.logger.log(LogLevel.INFO, `Making query to table "${tableName}" with date "${body.date}"`);
-            await this.registerService.insertMissingRegisters(tableName, body.date);
+            this.logger.log(LogLevel.INFO, `Run "insertMissingRegisters" to table "${tableName}" with date "${body.date}"`);
+            const insertedRegisters = await this.registerService.insertMissingRegisters(tableName, body.date);
+            this.logger.log(LogLevel.INFO, `Missing registers found and inserted [${insertedRegisters.length}] => `, { insertedRegisters });
+            response.data = insertedRegisters;
+            response.message = `Registers inserted: [${insertedRegisters.length}]`;
         } else {
             this.logger.log(LogLevel.ERROR, `Bad Request: invalid body input`);
-            response.message = `Invalid body input`
-            return this.json(response, 400)
+            response.message = `Invalid body input`;
+            statusCode = 400;
         }
+        return this.json(response, statusCode);
     }
 }
