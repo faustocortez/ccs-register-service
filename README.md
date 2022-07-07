@@ -9,14 +9,28 @@ _CCS internal service with the purpose of identify and insert the missing regist
 
 ## Getting started 🔧
 
-__Clone the repository__
+__Clone the repository__:
 ```
 git clone git@github.com:faustocortez/ccs-register-service.git
 ```
+<sub><sup>or [download a ZIP file](https://github.com/faustocortez/ccs-register-service/archive/refs/heads/develop.zip) of the project</sup></sub>
 
-__Rename the file example.env to .env__
+
+__Rename the file .env.example to .env__:
+```
+/* 
+  Change the name of .env.example to .env
+  and fill the required variables
+*/
+```
 
 ## Run the project 🚀
+
+__Go to root of the project directory__:
+```
+// Assuming that you are at the folder where the project was downloaded
+cd /css-register-service
+```
 
 __Install dependencies__:
 ```
@@ -38,10 +52,10 @@ http://localhost:3010
 
 __HTTP__:
 ```js
-# Endpoint
+// Endpoint
 [POST] => http://localhost:3010/service/v1/registers
 
-# Body
+// Body
 {
   date: "2022-06-24", // value for "fecha" in DB
 }
