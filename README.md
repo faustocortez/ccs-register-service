@@ -11,27 +11,51 @@ _CCS internal service with the purpose of identify and insert the missing regist
 
 __Clone the repository__
 ```
-  git clone git@github.com:faustocortez/ccs-register-service.git
+git clone git@github.com:faustocortez/ccs-register-service.git
 ```
 
 __Rename the file example.env to .env__
 
-### Run the project 🚀
+## Run the project 🚀
 
-__Install dependencies:__
+__Install dependencies__:
 ```
-  npm install
-```
-
-__Start server:__
-```
-  npm run start
+npm install
 ```
 
-__Base local endpoint__
+__Start server__:
 ```
-  http://localhost:3010
+npm run start
 ```
+
+__Base local endpoint__:
+```
+// you can change the port in .env file
+http://localhost:3010
+```
+
+## Usage 👨🏻‍💻
+
+__HTTP__:
+```js
+# Endpoint
+[POST] => http://localhost:3010/service/v1/registers
+
+# Body
+{
+  date: "2022-06-24", // value for "fecha" in DB
+}
+```
+__Curl__:
+```js
+curl --location --request POST 'http://localhost:3010/service/v1/registers' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "date": "2022-06-24"
+}'
+```
+
+
 
 ## Author ✒️
 

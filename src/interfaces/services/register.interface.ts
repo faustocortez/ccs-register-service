@@ -1,5 +1,8 @@
+import { JsonResult } from "inversify-express-utils/lib/results";
+
+// SERVICE
 export interface IRegisterService {
-    insertMissingRegisters(table: string): Promise<void>;
+    insertMissingRegisters(table: string, date: string): Promise<void>;
 }
 
 /** { idRegistro }
@@ -28,4 +31,20 @@ export interface IRegister {
     identificador: string;
     idCliente: string;
     fechaIng: Date; // '0000-00-00'
+}
+
+export interface IMissingRegister {
+    id: string; // idRegistro
+    event: string; // missing register
+    startTime: string; // computed value "inicia"
+}
+
+// CONTROLLER
+export interface IRegisterController {
+    insertMissingEventRegisters(body: { date: string }): Promise<JsonResult>;
+}
+
+export interface IRegisterControllerResponse {
+    message: string;
+    data?: IMissingRegister[];
 }
