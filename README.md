@@ -26,7 +26,7 @@ __Rename the file .env.example to .env__:
 
 ## Run the project 🚀
 
-__Go to root of the project directory__:
+__Go to the root of the project directory__:
 ```
 // Assuming that you are at the folder where the project was downloaded
 cd /css-register-service

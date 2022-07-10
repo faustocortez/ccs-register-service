@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { inject, injectable } from 'inversify';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { addSeconds, format, subSeconds, isBefore } from 'date-fns';
+import { addSeconds, subSeconds, isBefore, formatISO } from 'date-fns';
 import { IMissingRegister, IRegister, IRegisterService } from '../interfaces/register.interface';
 import { ILogger, LogLevel } from '../interfaces/logger.interface';
 import { TYPES } from '../core/types';
@@ -122,10 +122,13 @@ class RegisterService implements IRegisterService {
                                     let startTime: string;
                                     if (result.length > 1) {
                                         const referenceLog = result[result.length - 1];
-                                        let date = `${referenceLog.fecha} ${referenceLog.inicia}`;
-                                        const dateToCompare = `${register.fecha} ${register.inicia}`;
+                                        let date = `${formatISO(new Date(referenceLog.fecha), { representation: 'date' })} ${referenceLog.inicia}`;
+                                        const dateToCompare = `${formatISO(new Date(register.fecha), { representation: 'date' })} ${register.inicia}`;
+                                        // let date = `${referenceLog.fecha} ${referenceLog.inicia}`;
+                                        // const dateToCompare = `${register.fecha} ${register.inicia}`;
                                         date = isBefore(new Date(date), new Date(dateToCompare)) ? dateToCompare : date;
-                                        console.log('final date: ', date);
+       
+
                                         startTime = this.computeDateSeconds(date, 1, ((referenceLog.idEvento == 3 && 'ADD') || 'SUB'));
                                         await this.insertMissingRegister(register, event, startTime);
                                     }
@@ -210,7 +213,7 @@ class RegisterService implements IRegisterService {
         if (operation === 'SUB') computeDate = subSeconds(new Date(date), seconds);
         else computeDate = addSeconds(new Date(date), seconds);
 
-        const result = format(computeDate, 'HH:mm:ss');
+        const result = formatISO(computeDate, { representation: 'time' }).slice(0, -1); // .splice to remove the "Z" in the time string
         this.logger.log(LogLevel.DEBUG, `Result: "${result}"`);
 
         return result;
