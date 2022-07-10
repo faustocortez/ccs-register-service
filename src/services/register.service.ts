@@ -1,11 +1,12 @@
 import 'reflect-metadata';
 import { inject, injectable } from 'inversify';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { addSeconds, subSeconds, isBefore, formatISO } from 'date-fns';
+import { addSeconds, subSeconds, isBefore, formatISO, parseISO, format } from 'date-fns';
 import { IMissingRegister, IRegister, IRegisterService } from '../interfaces/register.interface';
 import { ILogger, LogLevel } from '../interfaces/logger.interface';
 import { TYPES } from '../core/types';
 import Database from '../database';
+import { da } from 'date-fns/locale';
 
 @injectable()
 class RegisterService implements IRegisterService {
@@ -61,7 +62,7 @@ class RegisterService implements IRegisterService {
                         }
                     }
                 }
-                this.logger.log(LogLevel.INFO, `Grouped pairs logs => `, mappedGroupPairs);
+                // this.logger.log(LogLevel.INFO, `Grouped pairs logs => `, mappedGroupPairs);
 
                 // Searching pair log is missing
                 this.logger.log(LogLevel.INFO, `### FIND MISSING PAIRS OF "Conectado" AND "Desconectado" REGISTERS ###`);
@@ -79,33 +80,40 @@ class RegisterService implements IRegisterService {
 
                         // Validate which register.evento is the missing one ("Conectado" = 0 or "Desconectado" = 1)
                         this.logger.log(LogLevel.DEBUG, `Value of the "registro.evento" that the "agente" ${agente} should have: "${event}"`);
-                        this.logger.log(LogLevel.DEBUG, `Value that he has: "${evento}" | "idRegistro" of register: ${register.idRegistro}`);
+                        this.logger.log(LogLevel.DEBUG, `Value that agent has: "${evento}" | "idRegistro" of register: ${register.idRegistro}`);
                         switch (counter) {
-                            case 0: // "Conectado"
+                            case 0:
+                                // Checking if "Conectado" exists
                                 if (event === evento) {
                                     counter++;
-                                    // If current register.evento is "Conectado" and is the last one, add missing "Desconectado"
+                                    // If "Conectado" exists but is the last one, add missing "Desconectado"
                                     if ((pairs.length - 1) === index) {
-                                        this.logger.log(LogLevel.DEBUG, `The "registro.evento" "${evento}" is correct, but its the last register, so it means that "${events[1]}" is missing\n`);
-                                        this.logger.log(LogLevel.INFO, `### PREPARING AND  COMPUTING DATA FOR THE MISSING REGISTER "${events[1]}" ###`);
-                                        const date = `${register.fecha} ${register.inicia}`;
+                                        this.logger.log(LogLevel.DEBUG, `The "registro.evento" "${evento}" is CORRECT, but its the last register, so it means that "${events[1]}" is missing\n`);
+                                        this.logger.log(LogLevel.INFO, `### PREPARING AND  COMPUTING DATA FOR THE LAST MISSING REGISTER "${events[1]}" ###`);
+                                        
+                                        const date = parseISO(`${RegisterService.dateToISOString(register.fecha as Date, 'date') } ${register.inicia}`);
                                         const startTime: string = this.computeDateSeconds(date, 1);
                                         await this.insertMissingRegister(register, events[1], startTime);
                                         continue;
                                     }
-                                    this.logger.log(LogLevel.DEBUG, `This "registro.evento" is correct! Checking next one...\n`);
+                                    this.logger.log(LogLevel.DEBUG, `This "registro.evento" is CORRECT! Checking next one...\n`);
                                 } else {
-                                    // Preparing data to insert missing "Desconectado"
+                                    // "Conectado" does not exists
+                                    // Preparing data to insert missing "Conectado"
                                     counter = 0;
-                                    this.logger.log(LogLevel.DEBUG, `The "registro.evento" "${evento}" is correct, but its the last register, so it means that "${events[1]}" is missing\n`);
+                                    this.logger.log(LogLevel.DEBUG, `The "registro.evento" "${evento}" is INCORRECT, missing register => "${event}"`);
                                     this.logger.log(LogLevel.DEBUG, `### PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
-                                    let date = `${register.fecha} ${register.inicia}`;
+                                    
+
+                                    let date: Date = parseISO(`${RegisterService.dateToISOString(register.fecha as Date, 'date') } ${register.inicia}`);;
                                     let startTime: string = this.computeDateSeconds(date, 1, 'SUB');
                                     if (pairs.length > 1 && index !== 0) {
                                         let { inicia } = pairs[index-1];
                                         const result = await this.getRegistersBetweenStartTimes(inicia, register.inicia, agente);
-                                        date = `${result[0].fecha} ${result[0].inicia}`;
-                                        startTime = this.computeDateSeconds(date, 1);
+                                        if (result.length) {
+                                            date = parseISO(`${RegisterService.dateToISOString(result[0].fecha as Date, 'date') } ${result[0].inicia}`);;
+                                            startTime = this.computeDateSeconds(date, 1);
+                                        }
                                     }
                                         
                                     await this.insertMissingRegister(register, event, startTime);
@@ -115,18 +123,23 @@ class RegisterService implements IRegisterService {
                                 counter = evento === events[0] ? counter : 0;
                                 if (evento !== event) {
                                     // Preparing data to insert missing "Conectado"
-                                    this.logger.log(LogLevel.DEBUG, `The "registro.evento" "${evento}" is correct, but its the last register, so it means that "${events[1]}" is missing\n`);
+                                    this.logger.log(LogLevel.DEBUG, `The "registro.evento" "${evento}" its INCORRECT, missing register => "${event}"`);
                                     this.logger.log(LogLevel.DEBUG, `### PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
 
                                     const result = await this.getRegistersFromStartTime(register.inicia, agente);
                                     let startTime: string;
+
                                     if (result.length > 1) {
                                         const referenceLog = result[result.length - 1];
-                                        let date = `${formatISO(new Date(referenceLog.fecha), { representation: 'date' })} ${referenceLog.inicia}`;
-                                        const dateToCompare = `${formatISO(new Date(register.fecha), { representation: 'date' })} ${register.inicia}`;
-                                        // let date = `${referenceLog.fecha} ${referenceLog.inicia}`;
-                                        // const dateToCompare = `${register.fecha} ${register.inicia}`;
-                                        date = isBefore(new Date(date), new Date(dateToCompare)) ? dateToCompare : date;
+                                        
+                                        // Extracting the "date" from Date ISO format to concatenate with the value of "inicia"
+                                        let date: Date = parseISO(`${RegisterService.dateToISOString(referenceLog.fecha as Date, 'date') } ${referenceLog.inicia}`);
+                                        this.logger.log(LogLevel.INFO, `"${referenceLog.evento}" ${ date }`);
+                                        let dateToCompare: Date = parseISO(`${RegisterService.dateToISOString(register.fecha as Date, 'date') } ${register.inicia}`);
+                                        this.logger.log(LogLevel.INFO, `"${register.evento}"  ${ dateToCompare }`);
+                                        date = isBefore(date, dateToCompare) ? dateToCompare : date;
+                                        this.logger.log(LogLevel.INFO, `final date set => ${date}`);
+                                        
        
 
                                         startTime = this.computeDateSeconds(date, 1, ((referenceLog.idEvento == 3 && 'ADD') || 'SUB'));
@@ -134,7 +147,7 @@ class RegisterService implements IRegisterService {
                                     }
                                     continue;
                                 }
-                                this.logger.log(LogLevel.DEBUG, `This "registro.evento" is correct! Checking next one...\n`);
+                                this.logger.log(LogLevel.DEBUG, `This "registro.evento" is CORRECT! Checking next one...\n`);
                                 break;
                         }
                     }
@@ -148,28 +161,39 @@ class RegisterService implements IRegisterService {
     }
     
     private async insertMissingRegister(reference: IRegister, missingPair: string, startTime: string): Promise<void> {
-        this.logger.log(LogLevel.INFO, `### INSERTING PREPARED MISSING REGISTER ###`);
+        this.logger.log(LogLevel.INFO, `### INSERTING PREPARED MISSING REGISTER "${missingPair}" ###`);
         const { idRegistro, ...data } = reference;
+        console.log('fechaaa', RegisterService.dateToISOString(data.fecha as Date, 'date'));
         const missingRegister = {
             ...data,
             evento: missingPair,
             idEvento: missingPair === 'Conectado' ? 4 : 300,
-            inicia: startTime
+            inicia: startTime,
+            fecha: RegisterService.dateToISOString(data.fecha as Date, 'date'),
+            fechaIng: RegisterService.dateToISOString(data.fechaIng as Date, 'date'),
+            fechaFinal: "0000-00-00"
         };
         const values = Object.values(missingRegister).map(v => `"${v}"`);
         this.query = `INSERT INTO ${this.table} (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
         this.logger.log(LogLevel.DEBUG, `Query => ${this.query}`);
         this.logger.log(LogLevel.DEBUG, `Register "${missingPair}" to insert =>`, missingRegister);
         const result = await this.database.query(this.query) as unknown as ResultSetHeader;
-        this.logger.log(LogLevel.DEBUG, `Query result:`, result);
+        this.logger.log(LogLevel.DEBUG, `Query result:`, result[0]);
 
-        if (result.affectedRows > 0 && result.insertId > 0) {
-            this.logger.log(LogLevel.INFO, `Register inserted successfully. Id: ${result.insertId}\n`);
+        if (result[0].affectedRows > 0) {
+            this.logger.log(LogLevel.INFO, `Register inserted successfully. Id: ${result[0].insertId}\n`);
             this.missingRegisters.push({
-                id: `${result.insertId}`,
+                id: `${result[0].insertId}`,
                 agentId: data.agente,
                 event: missingPair,
-                startTime
+                startTime,
+                date: missingRegister.fecha,
+                reference: {
+                    id: idRegistro,
+                    event: data.evento,
+                    date: data.fecha,
+                    startTime: data.inicia
+                }
             })
         } else this.logger.log(LogLevel.ERROR, `Can't insert missing register ${missingPair}`, { ...missingRegister });
     }
@@ -199,7 +223,7 @@ class RegisterService implements IRegisterService {
     private async getRegistersFromStartTime(startTime: string, agentId: string): Promise<IRegister[] | []> {
         this.logger.log(LogLevel.INFO, `### GETTING REGISTERS FROM "agente" ${agentId} DISTINCT THAN "Conectado" AND "Desconectado" AND "inicia" < "${startTime}" ###`);
         this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND inicia < "${startTime}" AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
-        this.logger.log(LogLevel.DEBUG, `Query to execute => ${this.query}"`,);
+        this.logger.log(LogLevel.DEBUG, `Query to execute => ${this.query}"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
         this.logger.log(LogLevel.DEBUG, `Query result: total registers found [${response.length}]\n`);
@@ -209,11 +233,12 @@ class RegisterService implements IRegisterService {
 
     private computeDateSeconds(date: string | Date, seconds: number, operation?: 'ADD' | 'SUB'): string {
         this.logger.log(LogLevel.DEBUG, `Computing date: "${date}", ${operation ? operation : 'ADD'} ${seconds}`);
-        let computeDate: Date;
-        if (operation === 'SUB') computeDate = subSeconds(new Date(date), seconds);
-        else computeDate = addSeconds(new Date(date), seconds);
+        let computedDate: Date;
+        if (operation === 'SUB') computedDate = subSeconds(date as Date, seconds);
+        else computedDate = addSeconds(date as Date, seconds);
 
-        const result = formatISO(computeDate, { representation: 'time' }).slice(0, -1); // .splice to remove the "Z" in the time string
+        const result = format(computedDate, 'HH:mm:ss'); // .splice to remove the "Z" in the time string
+        this.logger.log(LogLevel.DEBUG, `Result: "${computedDate}"`);
         this.logger.log(LogLevel.DEBUG, `Result: "${result}"`);
 
         return result;
@@ -225,6 +250,13 @@ class RegisterService implements IRegisterService {
             if (agente == '0') continue;
             return agente;
         }
+    }
+
+    /**
+     * for more information https://date-fns.org/v2.28.0/docs/formatISO
+     */
+    private static dateToISOString(date: Date, representation: 'date' | 'time'): string {
+        return formatISO(date, { representation });
     }
 }
 

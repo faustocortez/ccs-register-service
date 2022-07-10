@@ -12,7 +12,7 @@ export interface IRegisterService {
  */
 export interface IRegister {
     idRegistro: string; // primary key auto_increment
-    fecha: Date; // '0000-00-00'
+    fecha: string |  Date; // '0000-00-00'
     inicia: string; // '00:00:00'
     fechaFinal: Date; // '0000-00-00'
     termina: string; // '00:00:00'
@@ -37,7 +37,14 @@ export interface IMissingRegister {
     id: string; // idRegistro
     agentId: string; // "agente"
     event: string; // missing register
-    startTime: string; // computed value "inicia"
+    date: string | Date; // fecha
+    startTime: string; // computed value "inicia",
+    reference: {
+        id: string; // idRegistro
+        event: string; // evento
+        date: string | Date; // fecha
+        startTime: string; // inicia
+    }
 }
 
 // CONTROLLER
@@ -47,5 +54,5 @@ export interface IRegisterController {
 
 export interface IRegisterControllerResponse {
     message: string;
-    data?: IMissingRegister[];
+    insertedRegisters?: IMissingRegister[];
 }

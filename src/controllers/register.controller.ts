@@ -26,7 +26,7 @@ export class RegisterController extends BaseHttpController implements IRegisterC
 
     @httpPost("/registers")
     public async insertMissingEventRegisters(@requestBody() body: { date: string}) {
-        const response: IRegisterControllerResponse = { data: [], message: '' };
+        const response: IRegisterControllerResponse = { insertedRegisters: [], message: '' };
         let statusCode: number = 200;
         this.logger.log(LogLevel.INFO, `### INSERT MISSING REGISTERS SERVICE ###`);
         if (body?.date) {
@@ -34,7 +34,7 @@ export class RegisterController extends BaseHttpController implements IRegisterC
             const tableName = `${this.database}.${this.table}${month}`;
             const insertedRegisters = await this.registerService.insertMissingRegisters(tableName, body.date);
             this.logger.log(LogLevel.INFO, `Missing registers found and inserted [${insertedRegisters.length}] => `, { insertedRegisters });
-            response.data = insertedRegisters;
+            response.insertedRegisters = insertedRegisters;
             response.message = `Registers inserted: [${insertedRegisters.length}]`;
         } else {
             this.logger.log(LogLevel.ERROR, `Bad Request: invalid body input`);
