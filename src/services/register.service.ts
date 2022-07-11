@@ -78,7 +78,6 @@ class RegisterService implements IRegisterService {
                         evento = register.evento;
 
                         // Validate which register.evento is the missing one ("Conectado" = 0 or "Desconectado" = 1)
-                        this.logger.log(LogLevel.DEBUG, `iteration "${index}"`);
                         this.logger.log(LogLevel.DEBUG, `Validating "registro.evento" => "${event}"`);
                         this.logger.log(LogLevel.DEBUG, `Existing "register.evento" => "${evento}" | "idRegistro" of register => ${register.idRegistro}`);
                         switch (counter) {
@@ -123,7 +122,6 @@ class RegisterService implements IRegisterService {
                                     let startTime: string = format(subSeconds(parseISO(defaultTime), 1), 'HH:mm:ss');
 
                                     if (index > 0) {
-                                        console.log('entro');
                                         let lastConectado = pairs[index - 2];
                                         let lastDesconectado = pairs[index - 1];
                                         const result = await this.getRegistersBetweenStartTimes(lastDesconectado.inicia, register.inicia, agente);
@@ -140,10 +138,10 @@ class RegisterService implements IRegisterService {
                                             }
                                         }
                                     }
-                                    console.log(index, pairs.length-1);
-                                    console.log((pairs.length - 1) === index);
                                     if ((pairs.length - 1) === index && register.idEvento === RegisterEvents.Conectado) {
-                                        console.log('true');
+                                        const date = parseISO(`${RegisterService.dateToISOString(register.fecha as Date, 'date') } ${register.inicia}`);
+                                        const startTime: string = format(addSeconds(date, 1), 'HH:mm:ss');
+                                        await this.insertMissingRegister(register, events[1], startTime);
                                     };
                                     await this.insertMissingRegister(register, event, startTime);
                                     continue;
