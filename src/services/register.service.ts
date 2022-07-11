@@ -37,7 +37,7 @@ class RegisterService implements IRegisterService {
             let currentAgentId: string = RegisterService.getFirstValidAgentId(registers);
             
             this.logger.log(LogLevel.INFO, `### MAP EXISTING PAIRS REGISTERS BY "agente" ###`);
-            this.logger.log(LogLevel.INFO, `### CURRENT VALUE OF "agente" ${currentAgentId} ###`);
+            // this.logger.log(LogLevel.INFO, `### CURRENT VALUE OF "agente" ${currentAgentId} ###`);
             if (registers.length) {
                 for (let index = 0; index < registers.length; index++) {
                     const register: IRegister = registers[index];
@@ -45,18 +45,18 @@ class RegisterService implements IRegisterService {
 
                     if (agente != '0') {
                         // Group pairs in arrays by agent id
-                        this.logger.log(LogLevel.DEBUG, `Adding pairs ("Conectado" | "Desconectado") registers to array of "agente" ${currentAgentId} | Current array's length: [${registersByAgent.length}]`);
+                        // this.logger.log(LogLevel.DEBUG, `Adding pairs ("Conectado" | "Desconectado") registers to array of "agente" ${currentAgentId} | Current array's length: [${registersByAgent.length}]`);
                         if (currentAgentId === agente) {
                             registersByAgent.push(register);
                             if (index === (registers.length - 1)) {
-                                this.logger.log(LogLevel.DEBUG, `Adding last array of registers: [${registersByAgent.length}]\n`);
+                                // this.logger.log(LogLevel.DEBUG, `Adding last array of registers: [${registersByAgent.length}]\n`);
                                 mappedGroupPairs[agente] = [...registersByAgent];
                             }
                         } else {
-                            this.logger.log(LogLevel.INFO, `### TOTAL REGISTERS OF "agente" ${currentAgentId} = [${registersByAgent.length}] ###\n`);
+                            // this.logger.log(LogLevel.INFO, `### TOTAL REGISTERS OF "agente" ${currentAgentId} = [${registersByAgent.length}] ###\n`);
                             mappedGroupPairs[currentAgentId] = [...registersByAgent];
                             currentAgentId = agente;
-                            this.logger.log(LogLevel.INFO, `### CURRENT VALUE OF "agente" ${currentAgentId} ###`);
+                            // this.logger.log(LogLevel.INFO, `### CURRENT VALUE OF "agente" ${currentAgentId} ###`);
                             registersByAgent = [register]; // first register of updated currentId
                             if (index === (registers.length -1)) mappedGroupPairs[currentAgentId] = [...registersByAgent];
                         }
@@ -68,7 +68,7 @@ class RegisterService implements IRegisterService {
                 this.logger.log(LogLevel.INFO, `### FIND MISSING PAIRS OF "Conectado" AND "Desconectado" REGISTERS ###`);
                 let events = {  0: 'Conectado', 1: 'Desconectado' };
                 for (const [agente, pairs] of Object.entries(mappedGroupPairs)) {
-                    this.logger.log(LogLevel.INFO, `### ITERATION OVER "Conectado" AND "Desconectado" REGISTERS OF "agente" ${agente} ###`);
+                    this.logger.log(LogLevel.INFO, `### ITERATING REGISTERS OF "agente" ${agente} ###`);
                     // Initializing aux variables
                     let register: IRegister = pairs[0];
                     let { evento } = register;
@@ -79,8 +79,8 @@ class RegisterService implements IRegisterService {
                         evento = register.evento;
 
                         // Validate which register.evento is the missing one ("Conectado" = 0 or "Desconectado" = 1)
-                        this.logger.log(LogLevel.DEBUG, `Value of the "registro.evento" that the "agente" ${agente} should have: "${event}"`);
-                        this.logger.log(LogLevel.DEBUG, `Value that agent has: "${evento}" | "idRegistro" of register: ${register.idRegistro}`);
+                        this.logger.log(LogLevel.DEBUG, `Validating "registro.evento" => "${event}"`);
+                        this.logger.log(LogLevel.DEBUG, `Existing "register.evento" => "${evento}" | "idRegistro" of register => ${register.idRegistro}`);
                         switch (counter) {
                             case 0:
                                 // Checking if "Conectado" exists
@@ -101,18 +101,31 @@ class RegisterService implements IRegisterService {
                                     // "Conectado" does not exists
                                     // Preparing data to insert missing "Conectado"
                                     counter = 0;
-                                    this.logger.log(LogLevel.DEBUG, `The "registro.evento" "${evento}" is INCORRECT, missing register => "${event}"`);
-                                    this.logger.log(LogLevel.DEBUG, `### PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
+                                    this.logger.log(LogLevel.DEBUG, `"${event}" does not exist for pair => "${evento}"`, { existingPair: { 
+                                        idRegistro: register.idRegistro,
+                                        startTime: register.inicia,
+                                        event: evento
+                                    }});
+                                    this.logger.log(LogLevel.INFO, `### PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
                                     
-
-                                    let date: Date = parseISO(`${RegisterService.dateToISOString(register.fecha as Date, 'date') } ${register.inicia}`);;
-                                    let startTime: string = this.computeDateSeconds(date, 1, 'SUB');
+                                    // "fecha" of reference pair "Desconectado"
+                                    let date: string = `${RegisterService.dateToISOString(register.fecha as Date, 'date') } ${register.inicia}`;
+                                    let startTime: string = register.inicia;
                                     if (pairs.length > 1 && index !== 0) {
-                                        let { inicia } = pairs[index-1];
-                                        const result = await this.getRegistersBetweenStartTimes(inicia, register.inicia, agente);
+                                        // Getting register "inicia" before the current register
+                                        const registerBefore = pairs[index-1];
+                                        this.logger.log(LogLevel.DEBUG, `"regoster before"`, { registerBefore: { 
+                                            idRegistro: registerBefore.idRegistro,
+                                            startTime: registerBefore.inicia,
+                                            event: registerBefore.evento
+                                        }});
+                                        const result = await this.getRegistersBetweenStartTimes(registerBefore.inicia, register.inicia, agente);
                                         if (result.length) {
-                                            date = parseISO(`${RegisterService.dateToISOString(result[0].fecha as Date, 'date') } ${result[0].inicia}`);;
-                                            startTime = this.computeDateSeconds(date, 1);
+                                            if (result[0].idEvento === 8 || result[0].idEvento === 7) {
+                                                startTime = this.computeDateSeconds(parseISO(`${RegisterService.dateToISOString(result[0].fecha as Date, 'date') } ${result[0].inicia}`), 1, 'SUB');
+                                            } else if (result[0].idEvento === 300) {
+                                                startTime = this.computeDateSeconds(parseISO(`${RegisterService.dateToISOString(result[0].fecha as Date, 'date') } ${result[0].inicia}`), 1, 'ADD');
+                                            }
                                         }
                                     }
                                         
@@ -123,8 +136,12 @@ class RegisterService implements IRegisterService {
                                 counter = evento === events[0] ? counter : 0;
                                 if (evento !== event) {
                                     // Preparing data to insert missing "Conectado"
-                                    this.logger.log(LogLevel.DEBUG, `The "registro.evento" "${evento}" its INCORRECT, missing register => "${event}"`);
-                                    this.logger.log(LogLevel.DEBUG, `### PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
+                                    this.logger.log(LogLevel.DEBUG, `"${event}" does not exist for pair => "${evento}"`, { existingPair: { 
+                                        idRegistro: register.idRegistro,
+                                        startTime: register.inicia,
+                                        event: evento
+                                    }});
+                                    this.logger.log(LogLevel.INFO, `### PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
 
                                     const result = await this.getRegistersFromStartTime(register.inicia, agente);
                                     let startTime: string;
@@ -163,7 +180,6 @@ class RegisterService implements IRegisterService {
     private async insertMissingRegister(reference: IRegister, missingPair: string, startTime: string): Promise<void> {
         this.logger.log(LogLevel.INFO, `### INSERTING PREPARED MISSING REGISTER "${missingPair}" ###`);
         const { idRegistro, ...data } = reference;
-        console.log('fechaaa', RegisterService.dateToISOString(data.fecha as Date, 'date'));
         const missingRegister = {
             ...data,
             evento: missingPair,
