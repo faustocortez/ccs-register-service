@@ -238,7 +238,7 @@ class RegisterService implements IRegisterService {
 
     private async getAllEventPairsOrderedByAgent(): Promise<RowDataPacket[]> {
         this.logger.log(LogLevel.INFO, `* GETTING ALL PAIRS OF REGISTERS "Conectado AND "Desconectado" ORDERED BY "agente" AND "inicia" *`);
-        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND idEvento IN (4,300) AND agente="1262" ORDER BY agente ASC, inicia ASC;`
+        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;`
         this.logger.log(LogLevel.DEBUG, `Query to execute => "${this.query}"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
@@ -267,19 +267,6 @@ class RegisterService implements IRegisterService {
         this.logger.log(LogLevel.DEBUG, `Query result: total registers found [${response.length}]\n`);
         if (response.length) return response as IRegister[];
         return [];
-    }
-
-    private computeDateSeconds(date: string | Date, seconds: number, operation?: 'ADD' | 'SUB'): string {
-        this.logger.log(LogLevel.DEBUG, `Computing date: "${date}", ${operation ? operation : 'ADD'} ${seconds}`);
-        let computedDate: Date;
-        if (operation === 'SUB') computedDate = subSeconds(date as Date, seconds);
-        else computedDate = addSeconds(date as Date, seconds);
-
-        const result = format(computedDate, 'HH:mm:ss'); // .splice to remove the "Z" in the time string
-        this.logger.log(LogLevel.DEBUG, `Result: "${computedDate}"`);
-        this.logger.log(LogLevel.DEBUG, `Result: "${result}"`);
-
-        return result;
     }
 
     private static getFirstValidAgentId(registers: IRegister[]): string {
