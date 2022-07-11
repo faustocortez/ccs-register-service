@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { inject, injectable } from 'inversify';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { addSeconds, subSeconds, isBefore, formatISO, parseISO, format } from 'date-fns';
+import { addSeconds, subSeconds, formatISO, parseISO, format } from 'date-fns';
 import { IMissingRegister, IRegister, IRegisterService, RegisterEvents } from '../interfaces/register.interface';
 import { ILogger, LogLevel } from '../interfaces/logger.interface';
 import { TYPES } from '../core/types';
@@ -92,7 +92,7 @@ class RegisterService implements IRegisterService {
                                         const date = `${format(register.fecha as Date, 'yyyy-MM-dd')} ${register.inicia}`;
                                         let startTime: string = format(addSeconds(parseISO(date), 1), 'HH:mm:ss');
 
-                                        const result = await this.getRegistersFromStartTime(register.inicia, agente);
+                                        const result = await this.getRegistersAfterStartTime(register.inicia, agente);
                                         if (result.length > 1) {
                                             const referenceLog = result[result.length - 1];
                                             let datetime = `${format(referenceLog.fecha as Date, 'yyyy-MM-dd')} ${referenceLog.inicia}`;
@@ -120,20 +120,38 @@ class RegisterService implements IRegisterService {
                                     
                                     let defaultTime = `${format(register.fecha as Date, 'yyyy-MM-dd')} ${register.inicia}`;
                                     let startTime: string = format(subSeconds(parseISO(defaultTime), 1), 'HH:mm:ss');
-
-                                    if (index > 0) {
-                                        let lastConectado = pairs[index - 2];
+                                    let result: IRegister[] | [];
+                                    // if missing "Conectado" is the first one.
+                                    if (index === 0) {
+                                        result = await this.getRegistersBeforeStartTime(register.inicia, agente);
+                
+                                        if (result.length) {
+                                            const firstRegister = result[0];
+                                            let time = `${format(firstRegister.fecha as Date, 'yyyy-MM-dd')} ${firstRegister.inicia}`;
+                                            if (firstRegister.idEvento === RegisterEvents.Loguear) {
+                                                startTime = format(addSeconds(parseISO(time), 1), 'HH:mm:ss');
+                                            } else if (firstRegister.idEvento === RegisterEvents.Codificado || firstRegister.idEvento === RegisterEvents.Estado){
+                                                startTime = format(subSeconds(parseISO(time), 1), 'HH:mm:ss');
+                                            }
+                                        }
+                                    } else if (index > 0) {
                                         let lastDesconectado = pairs[index - 1];
-                                        const result = await this.getRegistersBetweenStartTimes(lastDesconectado.inicia, register.inicia, agente);
+                                        result = await this.getRegistersBetweenStartTimes(lastDesconectado.inicia, register.inicia, agente);
                                         // in case result is empty
                                         
                                         if (result.length > 1) {
                                             const referenceLog = result[0];
+                                            console.log(referenceLog.evento);
+                                            console.log(referenceLog.inicia);
                                             let datetime = `${format(referenceLog.fecha as Date, 'yyyy-MM-dd')} ${referenceLog.inicia}`;
 
                                             if (referenceLog.idEvento === RegisterEvents.Loguear) {
-                                                startTime = format(addSeconds(parseISO(datetime), 1), 'HH:mm:ss');
+
+                                                let time = `${format(referenceLog.fecha as Date, 'yyyy-MM-dd')} ${referenceLog.inicia}`;
+                                                startTime = format(addSeconds(parseISO(time), 1), 'HH:mm:ss');
+                                                console.log('loguear startyt', startTime);
                                             } else if (referenceLog.idEvento === RegisterEvents.Codificado || referenceLog.idEvento === RegisterEvents.Estado){
+                                                console.log('elese')
                                                 startTime = format(subSeconds(parseISO(datetime), 1), 'HH:mm:ss');
                                             }
                                         }
@@ -143,6 +161,7 @@ class RegisterService implements IRegisterService {
                                         const startTime: string = format(addSeconds(date, 1), 'HH:mm:ss');
                                         await this.insertMissingRegister(register, events[1], startTime);
                                     };
+                                    console.log('final starttime":',  startTime);
                                     await this.insertMissingRegister(register, event, startTime);
                                     continue;
                                 }
@@ -169,7 +188,9 @@ class RegisterService implements IRegisterService {
                                         let datetime = `${format(referenceLog.fecha as Date, 'yyyy-MM-dd')} ${referenceLog.inicia}`;
 
                                         if (referenceLog.idEvento === RegisterEvents.Loguear) {
-                                            startTime = format(subSeconds(parseISO(datetime), 1), 'HH:mm:ss');
+                                            const aux = result[result.length - 2];
+                                            let time = `${format(aux.fecha as Date, 'yyyy-MM-dd')} ${aux.inicia}`;
+                                            startTime = format(addSeconds(parseISO(time), 1), 'HH:mm:ss');
                                         } else if (referenceLog.idEvento === RegisterEvents.Codificado || referenceLog.idEvento === RegisterEvents.Estado){
                                             startTime = format(addSeconds(parseISO(datetime), 1), 'HH:mm:ss');
                                         }
@@ -177,8 +198,16 @@ class RegisterService implements IRegisterService {
                                     await this.insertMissingRegister(register, event, startTime);
                                     // Agregar ultimo desconectado cuando conectado cae en desconectado.
                                     if ((pairs.length - 1) === index && register.idEvento === RegisterEvents.Conectado) {
-                                        const date = parseISO(`${RegisterService.dateToISOString(register.fecha as Date, 'date') } ${register.inicia}`);
-                                        const startTime: string = format(addSeconds(date, 1), 'HH:mm:ss');
+                                        const result = await this.getRegistersAfterStartTime(register.inicia, agente);
+                                        let date = parseISO(`${RegisterService.dateToISOString(register.fecha as Date, 'date') } ${register.inicia}`);
+                                        startTime = format(addSeconds(date, 1), 'HH:mm:ss'); // when is the last register of all
+
+                                        if (result.length) {
+                                            const last = result[result.length - 1];
+                                            date = parseISO(`${RegisterService.dateToISOString(last.fecha as Date, 'date') } ${last.inicia}`);
+                                            if (last.idEvento === RegisterEvents.Codificado || last.idEvento === RegisterEvents.Estado) startTime = format(addSeconds(date, 1), 'HH:mm:ss');
+                                            else startTime = format(subSeconds(date, 1), 'HH:mm:ss');
+                                        }
                                         await this.insertMissingRegister(register, events[1], startTime);
                                     };
                                     continue;
@@ -236,7 +265,7 @@ class RegisterService implements IRegisterService {
 
     private async getAllEventPairsOrderedByAgent(): Promise<RowDataPacket[]> {
         this.logger.log(LogLevel.INFO, `* GETTING ALL PAIRS OF REGISTERS "Conectado AND "Desconectado" ORDERED BY "agente" AND "inicia" *`);
-        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;`
+        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND agente="1262" AND idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;`
         this.logger.log(LogLevel.DEBUG, `Query to execute => "${this.query}"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
@@ -256,9 +285,20 @@ class RegisterService implements IRegisterService {
         return [];
     }
 
-    private async getRegistersFromStartTime(startTime: string, agentId: string): Promise<IRegister[] | []> {
+    private async getRegistersAfterStartTime(startTime: string, agentId: string): Promise<IRegister[] | []> {
         this.logger.log(LogLevel.INFO, `* GETTING REGISTERS FROM "agente" ${agentId} DISTINCT THAN "Conectado" AND "Desconectado" AND "inicia" < "${startTime}" *`);
         this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND inicia > "${startTime}" AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
+        this.logger.log(LogLevel.DEBUG, `Query to execute => ${this.query}"`);
+        const result = await this.database.query(this.query);
+        const response = result[0] as RowDataPacket[];
+        this.logger.log(LogLevel.DEBUG, `Query result: total registers found [${response.length}]\n`);
+        if (response.length) return response as IRegister[];
+        return [];
+    }
+
+    private async getRegistersBeforeStartTime(startTime: string, agentId: string): Promise<IRegister[] | []> {
+        this.logger.log(LogLevel.INFO, `* GETTING REGISTERS FROM "agente" ${agentId} DISTINCT THAN "Conectado" AND "Desconectado" AND "inicia" < "${startTime}" *`);
+        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND inicia < "${startTime}" AND agente="${agentId}" AND idEvento NOT IN (4,300) ORDER BY inicia ASC;`;
         this.logger.log(LogLevel.DEBUG, `Query to execute => ${this.query}"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
