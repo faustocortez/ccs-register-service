@@ -47,6 +47,14 @@ export interface IMissingRegister {
     }
 }
 
+export enum RegisterEvents {
+    Loguear = 3,
+    Conectado = 4,
+    Codificado = 7,
+    Estado = 8,
+    Desconectado = 300
+}
+
 // CONTROLLER
 export interface IRegisterController {
     insertMissingEventRegisters(body: { date: string }): Promise<JsonResult>;
