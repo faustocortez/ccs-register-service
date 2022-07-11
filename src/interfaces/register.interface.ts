@@ -1,17 +1,23 @@
-import { JsonResult } from "inversify-express-utils/lib/results";
+import { JsonResult } from 'inversify-express-utils/lib/results';
 
 // SERVICE
 export interface IRegisterService {
     insertMissingRegisters(table: string, date: string): Promise<IMissingRegister[] | []>;
 }
 
-/** { idRegistro }
- * This property is "bigint" type in the database,
- * so it means that it's a big number
- * therefore it need to be hold by a string type in code.
- */
+export enum Defaults {
+    TimeFormat = 'HH:mm:ss', // based on current date library [https://date-fns.org/v2.28.0/docs/format]
+    DateFormat = "yyyy-MM-dd", // based on current date library [https://date-fns.org/v2.28.0/docs/format]
+    TimeValue = "0000:00:00",
+    DateValue = "0000-00-00",
+    WorkingDayStartTime = "06:00:00",
+    TableMonthDateFormat = "yyyyMM",
+    Connected = "Conectado",
+    Disconnected = "Desconectado"
+}
+
 export interface IRegister {
-    idRegistro: string; // primary key auto_increment
+    idRegistro: number; // primary key auto_increment
     fecha: string |  Date; // '0000-00-00'
     inicia: string; // '00:00:00'
     fechaFinal: Date; // '0000-00-00'
@@ -34,16 +40,21 @@ export interface IRegister {
 }
 
 export interface IMissingRegister {
-    id: string; // idRegistro
-    agentId: string; // "agente"
-    event: string; // missing register
-    date: string | Date; // fecha
-    startTime: string; // computed value "inicia",
-    reference: {
-        id: string; // idRegistro
-        event: string; // evento
+    agentId: string;
+    inserted: boolean;
+    missingRegister: {
+        id: number; // idRegistro
+        event: string; // missing register
         date: string | Date; // fecha
-        startTime: string; // inicia
+        startTime: string; // computed value "inicia",
+        service: string; // servicio
+    }
+    existingRegister: {
+        id: number; // idRegistro
+        event: string; // existing register
+        date: string | Date; // fecha
+        startTime: string; // computed value "inicia",
+        service: string; // servicio
     }
 }
 
@@ -62,5 +73,6 @@ export interface IRegisterController {
 
 export interface IRegisterControllerResponse {
     message: string;
-    insertedRegisters?: IMissingRegister[];
+    data?: IMissingRegister[];
+    error?: string;
 }
