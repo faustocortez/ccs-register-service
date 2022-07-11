@@ -138,20 +138,14 @@ class RegisterService implements IRegisterService {
                                         let lastDesconectado = pairs[index - 1];
                                         result = await this.getRegistersBetweenStartTimes(lastDesconectado.inicia, register.inicia, agente);
                                         // in case result is empty
-                                        
                                         if (result.length > 1) {
                                             const referenceLog = result[0];
-                                            console.log(referenceLog.evento);
-                                            console.log(referenceLog.inicia);
                                             let datetime = `${format(referenceLog.fecha as Date, 'yyyy-MM-dd')} ${referenceLog.inicia}`;
 
                                             if (referenceLog.idEvento === RegisterEvents.Loguear) {
-
                                                 let time = `${format(referenceLog.fecha as Date, 'yyyy-MM-dd')} ${referenceLog.inicia}`;
                                                 startTime = format(addSeconds(parseISO(time), 1), 'HH:mm:ss');
-                                                console.log('loguear startyt', startTime);
                                             } else if (referenceLog.idEvento === RegisterEvents.Codificado || referenceLog.idEvento === RegisterEvents.Estado){
-                                                console.log('elese')
                                                 startTime = format(subSeconds(parseISO(datetime), 1), 'HH:mm:ss');
                                             }
                                         }
@@ -161,7 +155,6 @@ class RegisterService implements IRegisterService {
                                         const startTime: string = format(addSeconds(date, 1), 'HH:mm:ss');
                                         await this.insertMissingRegister(register, events[1], startTime);
                                     };
-                                    console.log('final starttime":',  startTime);
                                     await this.insertMissingRegister(register, event, startTime);
                                     continue;
                                 }
@@ -241,7 +234,6 @@ class RegisterService implements IRegisterService {
         this.query = `INSERT INTO ${this.table} (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
         this.logger.log(LogLevel.DEBUG, `Query => ${this.query}`);
         this.logger.log(LogLevel.DEBUG, `Register "${missingPair}" to insert =>`, missingRegister);
-        return;
         const result = await this.database.query(this.query) as unknown as ResultSetHeader;
         this.logger.log(LogLevel.DEBUG, `Query result:`, result[0]);
 
@@ -265,7 +257,7 @@ class RegisterService implements IRegisterService {
 
     private async getAllEventPairsOrderedByAgent(): Promise<RowDataPacket[]> {
         this.logger.log(LogLevel.INFO, `* GETTING ALL PAIRS OF REGISTERS "Conectado AND "Desconectado" ORDERED BY "agente" AND "inicia" *`);
-        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND agente="1262" AND idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;`
+        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND idEvento IN (4,300) ORDER BY agente ASC, inicia ASC;`
         this.logger.log(LogLevel.DEBUG, `Query to execute => "${this.query}"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
