@@ -24,7 +24,7 @@ class RegisterService implements IRegisterService {
         @inject(TYPES.Logger) private logger: ILogger
     ) {}
     
-    public async insertMissingRegisters(table: string, date: string): Promise<IMissingRegister[] | []> {
+    public async insertMissingRegisters(table: string, date: string): Promise<IMissingRegister[]> {
         this.logger.log(LogLevel.INFO, `* STARTING PROCESS TO ADD MISSING REGISTERS *`);
         try {
             // "Pairs" are those registers that have either "Conectado" or "Desconectado" value in "evento" property.

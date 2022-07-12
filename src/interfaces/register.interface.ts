@@ -2,7 +2,7 @@ import { JsonResult } from 'inversify-express-utils/lib/results';
 
 // SERVICE
 export interface IRegisterService {
-    insertMissingRegisters(table: string, date: string): Promise<IMissingRegister[] | []>;
+    insertMissingRegisters(table: string, date: string): Promise<IMissingRegister[]>;
 }
 
 export enum Defaults {
