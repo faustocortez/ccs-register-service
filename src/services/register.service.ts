@@ -39,7 +39,7 @@ class RegisterService implements IRegisterService {
             this.logger.log(LogLevel.INFO, `* MAP EXISTING PAIRS REGISTERS BY "agente" *`);
             // this.logger.log(LogLevel.INFO, `* CURRENT VALUE OF "agente" ${currentAgentId} *`);
             if (registers.length) {
-                for (let index = 0; index < registers.length - 1300; index++) {
+                for (let index = 0; index < registers.length; index++) {
                     const register: IRegister = registers[index];
                     const { agente } = register;
 
@@ -76,12 +76,13 @@ class RegisterService implements IRegisterService {
                         // Validate which register.evento is the missing one ("Conectado" = 0 or "Desconectado" = 1)
                         switch (counter) {
                             case 0:
+                                this.logger.log(LogLevel.DEBUG, `CASE 0: Evaluating if exist "${events[0]}"`);
                                 // Checking if "Conectado" exists
                                 if (event === evento) {
                                     counter++;
                                     // If "Conectado" exists but is the last one, add missing "Desconectado"
                                     if ((pairs.length - 1) === index) {
-                                        this.logger.log(LogLevel.INFO, `* MISSING REGISTER ${events[1]} OF "agente" ${agente} *`);
+                                        this.logger.log(LogLevel.INFO, `* MISSING REGISTER "${events[1]}" OF "agente" ${agente} *`);
                                         this.logger.log(LogLevel.DEBUG, `PREPARING AND  COMPUTING DATA FOR THE LAST MISSING REGISTER "${events[1]}"`);
                                         const date = `${format(register.fecha as Date, Defaults.DateFormat)} ${register.inicia}`;
                                         let startTime: string = format(addSeconds(parseISO(date), 1), Defaults.TimeFormat);
@@ -104,12 +105,8 @@ class RegisterService implements IRegisterService {
                                     // "Conectado" does not exists
                                     // Preparing data to insert missing "Conectado"
                                     counter = 0;
-                                    this.logger.log(LogLevel.DEBUG, `"${event}" does not exist for pair => "${evento}"`, { existingPair: { 
-                                        idRegistro: register.idRegistro,
-                                        startTime: register.inicia,
-                                        event: evento
-                                    }});
-                                    this.logger.log(LogLevel.INFO, `* PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
+                                    this.logger.log(LogLevel.INFO, `* MISSING REGISTER "${event}" OF "agente" ${agente} *`);
+                                    this.logger.log(LogLevel.DEBUG, `* PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
                                     
                                     let defaultTime = `${format(register.fecha as Date, Defaults.DateFormat)} ${register.inicia}`;
                                     let startTime: string = format(subSeconds(parseISO(defaultTime), 1), Defaults.TimeFormat);
@@ -132,7 +129,7 @@ class RegisterService implements IRegisterService {
                                         result = await this.getRegistersBetweenStartTimes(lastDesconectado.inicia, register.inicia, agente, register.servicio);
                                         // in case result is empty
                                         if (result.length) {
-                                            const referenceLog = result[0];
+                                            const referenceLog = result[result.length-1];
                                             let datetime = `${format(referenceLog.fecha as Date, Defaults.DateFormat)} ${referenceLog.inicia}`;
 
                                             startTime = format(subSeconds(parseISO(datetime), 1), Defaults.TimeFormat);
@@ -148,15 +145,12 @@ class RegisterService implements IRegisterService {
                                 }
                                 break;
                             case 1: // "Desconectado"
+                                this.logger.log(LogLevel.DEBUG, `CASE 1: Evaluating if exist "${events[1]}"`);
                                 counter = evento === events[0] ? counter : 0;
                                 if (evento !== event) {
                                     // Preparing data to insert missing "Desconectado"
-                                    this.logger.log(LogLevel.DEBUG, `"${event}" does not exist for pair => "${evento}"`, { existingPair: { 
-                                        idRegistro: register.idRegistro,
-                                        startTime: register.inicia,
-                                        event: evento
-                                    }});
-                                    this.logger.log(LogLevel.INFO, `* PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
+                                    this.logger.log(LogLevel.INFO, `* MISSING REGISTER "${event}" OF "agente" ${agente} *`);
+                                    this.logger.log(LogLevel.DEBUG, `* PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
                                     
                                     let lastConectado = pairs[index - 1];
                                     const result = await this.getRegistersBetweenStartTimes(lastConectado.inicia, register.inicia, agente, register.servicio);
@@ -164,7 +158,7 @@ class RegisterService implements IRegisterService {
                                     let defaultTime = `${format(lastConectado.fecha as Date, Defaults.DateFormat)} ${lastConectado.inicia}`;
                                     let startTime: string = format(addSeconds(parseISO(defaultTime), 1), Defaults.TimeFormat);
 
-                                    if (result.length > 1) {
+                                    if (result.length) {
                                         const referenceLog = result[result.length - 1];
                                         let datetime = `${format(referenceLog.fecha as Date, Defaults.DateFormat)} ${referenceLog.inicia}`;
 
@@ -222,6 +216,7 @@ class RegisterService implements IRegisterService {
         const values = Object.values(missingRegister).map(v => `"${v}"`);
         this.query = `INSERT INTO ${this.table} (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
         this.logger.log(LogLevel.DEBUG, `Query => "${this.query}"`);
+        return;
         const result = await this.database.query(this.query) as unknown as ResultSetHeader;
         this.logger.log(LogLevel.DEBUG, `Query result:`, result[0]);
         
@@ -254,7 +249,7 @@ class RegisterService implements IRegisterService {
 
     private async getAllEventPairsOrderedByAgent(): Promise<RowDataPacket[]> {
         this.logger.log(LogLevel.INFO, `* GETTING ALL PAIRS OF REGISTERS "Conectado AND "Desconectado" FROM "fecha" "${this.date}" *`);
-        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND idEvento IN (${RegisterEvents.Conectado}, ${RegisterEvents.Desconectado}) ORDER BY agente ASC, inicia ASC;`
+        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND agente=1471 AND idEvento IN (${RegisterEvents.Conectado}, ${RegisterEvents.Desconectado}) ORDER BY agente ASC, inicia ASC;`
         this.logger.log(LogLevel.DEBUG, `Query to execute => "${this.query}"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
