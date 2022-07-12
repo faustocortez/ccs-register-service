@@ -79,7 +79,7 @@ class RegisterService implements IRegisterService {
                                 // Checking if "Conectado" exists
                                 if (event === evento) {
                                     counter++;
-                                    this.logger.log(LogLevel.DEBUG, `[CASE 0]: ✅ "${events[0]}" exists`);
+                                    this.logger.log(LogLevel.DEBUG, `[CASE 0]: ✓ "${events[0]}" exists`);
                                     // If "Conectado" exists but is the last one, add missing "Desconectado"
                                     if ((pairs.length - 1) === index) {
                                         this.logger.log(LogLevel.INFO, `* MISSING REGISTER "${events[1]}" OF "agente" ${agente} *`);
@@ -104,7 +104,7 @@ class RegisterService implements IRegisterService {
                                 } else {
                                     // "Conectado" does not exists
                                     counter = 0;
-                                    this.logger.log(LogLevel.DEBUG, `[CASE 0]: ❌ "${events[0]}" doesn't exists`);
+                                    this.logger.log(LogLevel.DEBUG, `[CASE 0]: ✕ "${events[0]}" doesn't exists`);
 
                                     this.logger.log(LogLevel.INFO, `* MISSING REGISTER "${event}" OF "agente" ${agente} *`);
                                     this.logger.log(LogLevel.INFO, `* PREPARING AND COMPUTING DATA FOR THE MISSING REGISTER "${event}"...`);
@@ -150,7 +150,7 @@ class RegisterService implements IRegisterService {
                             case 1: // "Desconectado"
                                 counter = evento === events[0] ? counter : 0;
                                 if (evento !== event) {
-                                    this.logger.log(LogLevel.DEBUG, `[CASE 0]: ❌ "${events[1]}" exists`);
+                                    this.logger.log(LogLevel.DEBUG, `[CASE 0]: ✕ "${events[1]}" exists`);
 
                                     // Preparing data to insert missing "Desconectado"
                                     this.logger.log(LogLevel.INFO, `* MISSING REGISTER "${event}" OF "agente" ${agente} *`);
@@ -192,7 +192,7 @@ class RegisterService implements IRegisterService {
                                     };
                                     continue;
                                 }
-                                this.logger.log(LogLevel.DEBUG, `[CASE 1]: ✅ "${events[1]}" exists`);
+                                this.logger.log(LogLevel.DEBUG, `[CASE 1]: ✓ "${events[1]}" exists`);
                                 break;
                         }
                     }
