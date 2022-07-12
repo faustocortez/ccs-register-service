@@ -1,12 +1,12 @@
 {
   "name": "ccs-register-service",
   "version": "1.0.0",
-  "description": "CCS internal service with the purpose of add missing \"DISCONNECTED\" logs in the database",
+  "description": "CCS internal service with the purpose of identify and insert the missing register \"Conectado\"/\"Desconectado\" in the database",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
     "start": "nodemon src/main.ts --exec ts-node",
-    "bundle:server": "npm run build && webpack --mode=production",
+    "build:production": "webpack --mode=production",
     "test": "echo \"Error: no test implemented yet\" && exit 1"
   },
   "keywords": [
@@ -18,6 +18,7 @@
     "@types/mysql2": "github:types/mysql2",
     "@types/node": "^18.0.0",
     "nodemon": "^2.0.18",
+    "ts-loader": "^9.3.1",
     "ts-node": "^10.8.2",
     "typescript": "^4.7.4",
     "webpack": "^5.73.0",
