@@ -28,7 +28,7 @@ export class RegisterController extends BaseHttpController implements IRegisterC
     public async insertMissingEventRegisters(@requestBody() body: { date: string}) {
         const response: IRegisterControllerResponse = { data: [], message: '' };
         let statusCode: number = 200;
-        this.logger.log(LogLevel.INFO, `### INSERT MISSING REGISTERS SERVICE ###`);
+        this.logger.log(LogLevel.INFO, `### MISSING REGISTERS SERVICE ###`);
         if (body?.date) {
             const month = format(new Date(`${body.date} ${Defaults.WorkingDayStartTime}`), Defaults.TableMonthDateFormat);
             const tableName = `${this.database}.${this.table}${month}`;

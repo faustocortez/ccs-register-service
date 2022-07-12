@@ -13,5 +13,5 @@ serverInstace.listen(port, async () => {
   const db = container.get<Database>(TYPES.Database);
   await db.getConnection();
   
-  logger.log(LogLevel.DEBUG, `Server listening in port: ${ port }`);
+  logger.log(LogLevel.DEBUG, `Server listening in port: ${ port }\n`);
 });
