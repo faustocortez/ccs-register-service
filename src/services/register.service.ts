@@ -216,7 +216,6 @@ class RegisterService implements IRegisterService {
         const values = Object.values(missingRegister).map(v => `"${v}"`);
         this.query = `INSERT INTO ${this.table} (fecha, inicia, fechaFinal, termina, dura, ip, estacion, idEvento, evento, estadoEvento, Telefono, ea, agente, Password, grabacion, servicio, identificador, idCliente, fechaIng) VALUES(${values.toString()})`;
         this.logger.log(LogLevel.DEBUG, `Query => "${this.query}"`);
-        return;
         const result = await this.database.query(this.query) as unknown as ResultSetHeader;
         this.logger.log(LogLevel.DEBUG, `Query result:`, result[0]);
         
@@ -249,7 +248,7 @@ class RegisterService implements IRegisterService {
 
     private async getAllEventPairsOrderedByAgent(): Promise<RowDataPacket[]> {
         this.logger.log(LogLevel.INFO, `* GETTING ALL PAIRS OF REGISTERS "Conectado AND "Desconectado" FROM "fecha" "${this.date}" *`);
-        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND agente=1471 AND idEvento IN (${RegisterEvents.Conectado}, ${RegisterEvents.Desconectado}) ORDER BY agente ASC, inicia ASC;`
+        this.query = `SELECT * FROM ${this.table} WHERE fecha="${this.date}" AND idEvento IN (${RegisterEvents.Conectado}, ${RegisterEvents.Desconectado}) ORDER BY agente ASC, inicia ASC;`
         this.logger.log(LogLevel.DEBUG, `Query to execute => "${this.query}"`);
         const result = await this.database.query(this.query);
         const response = result[0] as RowDataPacket[];
