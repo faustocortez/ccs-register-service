@@ -83,10 +83,12 @@ __Switch to branch__:
 git checkout develop
 ```
 
-__Install dependencies__: _<sub><sup>* (optional: In case you haven't done it before)</sup></sub>_
+__Install dependencies__:
+_<sub><sup>* (optional: In case you haven't done it before)</sup></sub>_
 ```
 npm install
 ```
+
 __Start CODING!__
 
 

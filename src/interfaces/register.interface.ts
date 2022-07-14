@@ -7,13 +7,15 @@ export interface IRegisterService {
 
 export enum Defaults {
     TimeFormat = 'HH:mm:ss', // based on current date library [https://date-fns.org/v2.28.0/docs/format]
-    DateFormat = "yyyy-MM-dd", // based on current date library [https://date-fns.org/v2.28.0/docs/format]
-    TimeValue = "00:00:00",
-    DateValue = "0000-00-00",
-    WorkingDayStartTime = "06:00:00",
-    TableMonthDateFormat = "yyyyMM",
-    Connected = "Conectado",
-    Disconnected = "Desconectado"
+    DateFormat = 'yyyy-MM-dd', // based on current date library [https://date-fns.org/v2.28.0/docs/format]
+    TimeValue = '00:00:00',
+    DateValue = '0000-00-00',
+    WorkingDayStartTime = '06:00:00',
+    TableMonthDateFormat = 'yyyyMM',
+    Connected = 'Conectado',
+    Disconnected = 'Desconectado',
+    ADD = 'ADD',
+    SUB = 'SUB'
 }
 
 export interface IRegister {
