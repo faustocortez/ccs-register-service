@@ -14,8 +14,9 @@ export enum Defaults {
     TableMonthDateFormat = 'yyyyMM',
     Connected = 'Conectado',
     Disconnected = 'Desconectado',
-    ADD = 'ADD',
-    SUB = 'SUB'
+    Add = 'ADD',
+    Sub = 'SUB',
+    InvalidAgentId = '0'
 }
 
 export interface IRegister {
